@@ -60,7 +60,7 @@ digraph context {
 3. For each micro-unit:
    - Stage only the files belonging to that concern
    - Write a commit message focused on WHY, not WHAT
-   - Commit with `Co-Authored-By` trailer
+   - Commit
 
 **Splitting heuristic:**
 - Different files touching different features → separate commits
@@ -70,14 +70,12 @@ digraph context {
 
 **Commit message format:**
 ```
-<type>: <short description of why>
+<scope>: <short description of why>
 
 <optional body explaining context>
-
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
-Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`
+Scope is flexible — use whatever best describes the concern: `docker`, `agents`, `auth`, `feat`, `fix`, `ci`, `api`, etc.
 
 **Red flags — stop and re-split:**
 - Commit touches 5+ unrelated files
@@ -91,32 +89,63 @@ Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`
 3. Generate PR body from micro-commit messages
 4. Create PR:
 
+**PR title format:** `<Type>: <Subject>` (e.g. `Feat: Add New Button Component`)
+
+Types: `Feat`, `Fix`, `Docs`, `Style`, `Refactor`, `Perf`, `Test`, `Build`, `Ci`, `Chore`, `Revert`
+
 ```bash
-gh pr create --title "<concise title>" --body "$(cat <<'EOF'
+gh pr create --title "<Type>: <Subject>" --body "$(cat <<'EOF'
 ## Summary
-<bullets derived from commit messages>
+
+<what changed and why>
 
 ## Changes
-<list of micro-commits with their types>
 
-## Test Plan
-- [ ] <verification steps>
+-
+
+## How to Test
+
+-
+
+## Checklist
+
+### Testing
+- [ ] Tests added/updated (or N/A with reason)
+- [ ] Verified manually
+
+### Compatibility
+- [ ] Breaking changes noted (if any)
+
+### Documentation
+- [ ] Docs/config updated (if needed)
 EOF
 )"
 ```
 
-Report the PR URL.
+Fill in Summary, Changes, and How to Test from micro-commit messages. Report the PR URL.
 
 ## Stage 3: Multi-Role Review
 
 Dispatch **parallel** review subagents. Each reviews the PR diff independently.
+
+**Core reviewers (always dispatched):**
 
 | Reviewer | Focus | Agent |
 |----------|-------|-------|
 | **Code Reviewer** | Logic, architecture, API contracts, backwards compatibility | `code-reviewer` (opus) |
 | **Security Reviewer** | Vulnerabilities, auth, injection, trust boundaries | `security-reviewer` (sonnet) |
 | **Quality Reviewer** | Naming, patterns, maintainability, anti-patterns | `quality-reviewer` (sonnet) |
+| **Performance Reviewer** | Bottlenecks, memory, latency, algorithmic complexity | `quality-reviewer` (opus) |
 | **Test Engineer** | Coverage gaps, missing edge cases, test quality | `test-engineer` (sonnet) |
+
+**Specialist reviewers (dispatched when relevant changes detected):**
+
+| Reviewer | Focus | Agent | Trigger |
+|----------|-------|-------|---------|
+| **UI/UX Reviewer** | Usability, interaction flow, accessibility, responsiveness | `designer` (sonnet) | Frontend components, templates, CSS, layouts |
+| **Design Reviewer** | Visual consistency, design system adherence, spacing, color | `designer` (sonnet) | UI assets, style files, component styling |
+| **DevOps Reviewer** | CI/CD impact, Dockerfile, deployment, infra config | `build-fixer` (sonnet) | CI configs, Dockerfiles, deploy scripts, infra |
+| **Documentation Reviewer** | Docs clarity, API docs, inline comments, README | `writer` (haiku) | Docs files, README, significant public API changes |
 
 Each reviewer produces a structured report:
 
@@ -164,10 +193,10 @@ Analyze commits since last release to determine version bump.
 | New feature (additive, non-breaking) | **Minor** | GitHub Release |
 | Bug fix, docs, refactor | **Patch** | Git tag only |
 
-**Detection from commit types:**
-- `feat` with `BREAKING CHANGE` in body → major
-- `feat` → minor
-- `fix`, `refactor`, `docs`, `chore`, `style`, `test` → patch
+**Detection from commit content:**
+- `BREAKING CHANGE` in commit body or scope → major
+- New feature or capability added → minor
+- Bug fix, docs, refactor, config, or other non-breaking change → patch
 
 **For Major/Minor (GitHub Release):**
 ```bash
@@ -199,7 +228,7 @@ git push origin v<version>
 |-------|-------|--------|--------|
 | 1. Commit | Uncommitted changes | Micro-unit commits | — |
 | 2. PR | Branch with commits | Open PR | — |
-| 3. Review | Open PR | Review reports | 4 parallel subagents |
+| 3. Review | Open PR | Review reports | 5 core + specialists based on changes |
 | 4. Merge | Reviewed PR | Merged PR | — (re-runs Stage 3 if fixes needed) |
 | 5. Release | Merged commits | Release or tag | — |
 
@@ -211,7 +240,7 @@ git push origin v<version>
 
 **Skipping review**
 - Problem: Merge without multi-role review
-- Fix: Always run all 4 reviewers. They catch different things.
+- Fix: Always run all 5 core reviewers. Dispatch specialists when changes warrant them.
 
 **Wrong version bump**
 - Problem: Tagging a breaking change as patch
@@ -232,6 +261,6 @@ git push origin v<version>
 
 **Always:**
 - One concern per commit
-- All 4 reviewers for every PR
+- All 5 core reviewers for every PR, specialists when relevant
 - Fix critical issues before merge
 - Check existing tags before versioning
