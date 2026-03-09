@@ -15,7 +15,7 @@
         "name": "khemoo",
         "url": "https://github.com/kickthemoon0817"
       },
-      "source": ".",
+      "source": "./",
       "category": "productivity",
       "homepage": "https://github.com/kickthemoon0817/khemoo-skills",
       "keywords": ["version-control", "commits", "pull-requests", "code-review", "releases", "semver"]
