@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "kickthemoon0817-khemoo-skills",
+  "description": "Version control workflow skills: micro-unit commits, PR-based review with multi-role subagents, and semver releases",
+  "owner": {
+    "name": "khemoo",
+    "url": "https://github.com/kickthemoon0817"
+  },
+  "plugins": [
+    {
+      "name": "khemoo-skills",
+      "description": "Version control workflow skill: micro-unit commits, PR-based review with multi-role subagents, and semver releases",
+      "version": "0.1.0",
+      "author": {
+        "name": "khemoo",
+        "url": "https://github.com/kickthemoon0817"
+      },
+      "source": ".",
+      "category": "development",
+      "keywords": ["version-control", "commits", "pull-requests", "code-review", "releases", "semver"]
+    }
+  ]
+}
