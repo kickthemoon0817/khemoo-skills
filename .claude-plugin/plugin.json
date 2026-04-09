@@ -8,5 +8,13 @@
   },
   "repository": "https://github.com/kickthemoon0817/khemoo-skills",
   "license": "MIT",
-  "keywords": ["version-control", "commits", "pull-requests", "code-review", "releases", "semver"]
+  "keywords": [
+    "version-control",
+    "commits",
+    "pull-requests",
+    "code-review",
+    "releases",
+    "semver"
+  ],
+  "skills": "./skills/"
 }
