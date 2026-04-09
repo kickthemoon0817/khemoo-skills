@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "kickthemoon0817-khemoo-skills",
+  "name": "khemoo",
   "description": "Version control workflow skills: micro-unit commits, PR-based review with multi-role subagents, and semver releases",
   "owner": {
     "name": "khemoo",
