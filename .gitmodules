@@ -1,0 +1,3 @@
+[submodule "submodules/simul"]
+	path = submodules/simul
+	url = https://github.com/kickthemoon0817/simul.git

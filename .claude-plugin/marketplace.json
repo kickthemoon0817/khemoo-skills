@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "khemoo",
-  "description": "Version control workflow skills: micro-unit commits, PR-based review with multi-role subagents, and semver releases",
+  "description": "AI agent skills for 3D simulation workflows, version control pipelines, and DCC tool integration",
   "owner": {
     "name": "khemoo",
     "url": "https://github.com/kickthemoon0817"
@@ -19,6 +19,19 @@
       "category": "productivity",
       "homepage": "https://github.com/kickthemoon0817/khemoo-skills",
       "keywords": ["version-control", "commits", "pull-requests", "code-review", "releases", "semver"]
+    },
+    {
+      "name": "simul",
+      "description": "3D simulation and DCC skills for Isaac Sim, Unreal Engine, Blender, and USD — scene setup, scripting patterns, camera workflows, physics, materials, and guided installation",
+      "version": "0.0.18",
+      "author": {
+        "name": "khemoo",
+        "url": "https://github.com/kickthemoon0817"
+      },
+      "source": "./submodules/simul",
+      "category": "simulation",
+      "homepage": "https://github.com/kickthemoon0817/simul",
+      "keywords": ["simulation", "isaac-sim", "unreal", "blender", "usd", "3d", "robotics", "mcp"]
     }
   ]
 }
