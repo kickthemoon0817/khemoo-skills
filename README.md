@@ -16,14 +16,14 @@ End-to-end version control workflow:
 
 ## Installation
 
-### From a Claude session (slash commands)
+khemoo-skills ships through the `khemoo` Claude Code marketplace at <https://github.com/kickthemoon0817/khemoo-claude-plugins>:
 
-```
-/plugin marketplace add kickthemoon0817/khemoo-skills
-/plugin install khemoo-skills@kickthemoon0817-khemoo-skills
+```text
+/plugin marketplace add kickthemoon0817/khemoo-claude-plugins
+/plugin install khemoo-skills@khemoo
 ```
 
-### From the CLI
+For local development (working in this repo directly):
 
 ```bash
 claude --plugin-dir /path/to/khemoo-skills
