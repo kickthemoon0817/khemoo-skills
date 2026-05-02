@@ -111,33 +111,12 @@ Dispatch **parallel** review subagents. Each reviews a single diff independently
 
 The reviewer dispatch below is identical regardless of scope — only the diff input changes.
 
-**Core reviewers (always dispatched, 5 distinct sessions):**
+**Reviewer roster:**
 
-| Reviewer | Focus | Agent | Model |
-|----------|-------|-------|-------|
-| Code Reviewer | Logic, architecture, API contracts, backwards compatibility | `code-reviewer` | opus |
-| Security Reviewer | Vulnerabilities, auth, injection, trust boundaries | `security-reviewer` | sonnet |
-| Quality Reviewer | Naming, patterns, maintainability, anti-patterns | `quality-reviewer` | sonnet |
-| Performance Reviewer | Bottlenecks, memory, latency, algorithmic complexity | `quality-reviewer` | opus |
-| Test Engineer | Coverage gaps, missing edge cases, test quality | `test-engineer` | sonnet |
+- **Core reviewers (5, always dispatched):** see `references/core-reviewers.md`.
+- **Specialist reviewers (dispatched when matching files appear in the diff):** see `references/specialists/README.md`.
 
-`quality-reviewer` is dispatched twice intentionally — once at sonnet for breadth (quality lens) and once at opus for depth (performance lens). Run them as two separate sessions; do not merge.
-
-**Specialist reviewers** (dispatched when matching files appear in the diff): see `references/specialists/README.md` for the trigger table. Each specialist has its own focused reference file with role-specific checklist and anti-noise guidance — load the matching file when dispatching.
-
-*Surface specialists* (cover lenses the core 5 do not):
-- UI/UX → `references/specialists/ui-ux.md`
-- Design → `references/specialists/design.md`
-- DevOps → `references/specialists/devops.md`
-- Documentation → `references/specialists/documentation.md`
-
-*System specialists* (deeper companions to the core reviewers):
-- Observability → `references/specialists/observability.md`
-- API / Contract → `references/specialists/api-contract.md`
-- Systems Performance → `references/specialists/systems-performance.md`
-- Security Deep → `references/specialists/security-deep.md`
-
-Specialists run in parallel alongside the core 5. When a system specialist dispatches, the matching core reviewer still runs — the specialist adds depth, not replacement.
+When a specialist dispatches, the matching core reviewer still runs — the specialist adds depth, not replacement.
 
 Each reviewer produces a structured report:
 
