@@ -59,10 +59,6 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
 - Config changes → separate from code changes
 - **If a change does not fit a listed heuristic, default to splitting.**
 
-**Concern naming:**
-- Name the concern by the specific behavior it changes, not by its size or category.
-- **Banned generic names:** `cleanup`, `misc`, `polish`, `fixes` (plural), `various`, `wip`, `chore` (when used as the whole concern). Reaching for one of these means the unit is too large — split.
-
 **Commit message format (Conventional Commits, required for Stage 5 bump detection):**
 ```
 <type>[!]: <short imperative description>
@@ -72,7 +68,7 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
 <optional footers, e.g. BREAKING CHANGE: ...>
 ```
 
-**Type:** one of `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. **Do not use the parenthesized scope form** (`feat(auth):`, `fix(api):`, etc.) — type alone is enough. If the concern needs more context, put it in the description or the body. Use `!` after the type to mark a breaking change (`feat!:`, `refactor!:`). Use the `BREAKING CHANGE:` footer to describe the break.
+**Type:** A short lowercase word naming the domain or category of the change. Standard categories work (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`); domain-specific types are also fine when they explain the change better (`docker`, `sim`, `ros2`, `auth`, `api`, `db`, etc.). One word, lowercase, no punctuation. **Do not use the parenthesized scope form** (`feat(auth):`, `fix(api):`, etc.) — the type alone is enough. Use `!` after the type to mark a breaking change (`feat!:`, `docker!:`). Use the `BREAKING CHANGE:` footer to describe the break.
 
 **Red flags — stop and re-split:**
 - Commit touches 5+ unrelated files
@@ -208,7 +204,7 @@ If commits mix levels, take the highest **after** applying the rules below.
 |----------------|------|
 | `BREAKING CHANGE:` footer, or `!` after type (`feat!:`, `refactor!:`) | Major |
 | A **substantial** new user-facing capability — large enough to be the headline of release notes (e.g., a new top-level command, a new full subsystem, a new public skill) AND the PR body has a non-empty `Release-Note` line written for end users | Minor |
-| Everything else, **including small `feat:` commits** — fixes, docs, refactors, chores, tests, perf, dep bumps, internal helpers, small new options, small new helpers, narrow additive features | Patch |
+| Everything else — fixes, docs, refactors, chores, tests, perf, dep bumps, internal helpers, small new options, small new helpers, narrow additive features. **Type prefix does not determine bump level** — only the headline test and `!` / `BREAKING CHANGE:` markers do | Patch |
 
 **The release-headline test (hard rule):** If you cannot write a one-sentence release-note headline that an end user would care about, it is a **patch**. The `Release-Note` line in the PR body is the artifact of this test — if it says "none — internal change", it is a patch.
 
@@ -270,7 +266,7 @@ Otherwise the tag will reference a commit the remote does not have.
 - Call `gh release create` for a patch without explicit user request
 
 **Always:**
-- One concern per commit, named by behavior (not by category)
+- One concern per commit
 - Conventional Commits format on every commit
 - All 5 core reviewers for every PR, specialists when relevant
 - Fix critical issues before merge

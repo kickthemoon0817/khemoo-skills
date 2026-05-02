@@ -10,9 +10,7 @@ Used by Stage 2 of the vc-khemoo pipeline.
 
 Example: `Feat: Add New Button Component`.
 
-Types (capitalized for the title):
-
-`Feat`, `Fix`, `Docs`, `Style`, `Refactor`, `Perf`, `Test`, `Build`, `Ci`, `Chore`, `Revert`
+Capitalize whatever type was used in the underlying commits (e.g. `Feat`, `Fix`, `Docker`, `Sim`, `Ros2`, `Auth`). The same permissive type set as Stage 1 applies.
 
 ## Body — `gh pr create` invocation
 
