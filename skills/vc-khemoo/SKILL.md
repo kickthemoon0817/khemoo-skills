@@ -111,14 +111,29 @@ Dispatch **parallel** review subagents. Each reviews a single diff independently
 
 The reviewer dispatch below is identical regardless of scope — only the diff input changes.
 
-**Reviewer roster:**
+**Reviewer roster** (cores always dispatched; specialists when their trigger matches):
 
-- **Core reviewers (5, always dispatched):** see `references/cores/README.md` for the roster; each reviewer has its own focused file under `references/cores/` with checklist and anti-noise guidance.
-- **Specialist reviewers (dispatched when matching files appear in the diff):** see `references/specialists/README.md`.
+| Reviewer | Agent | Model | Trigger / Focus | Brief |
+|----------|-------|-------|-----------------|-------|
+| Code | `code-reviewer` | opus | always · logic, architecture, contracts | `cores/code-reviewer.md` |
+| Security | `security-reviewer` | sonnet | always · OWASP, injection, auth, BOLA | `cores/security-reviewer.md` |
+| Quality | `quality-reviewer` | sonnet | always · naming, patterns, anti-patterns | `cores/quality-reviewer.md` |
+| Performance | `quality-reviewer` | opus | always · complexity, memory, latency | `cores/performance-reviewer.md` |
+| Test Engineer | `test-engineer` | sonnet | always · coverage, edge cases | `cores/test-engineer.md` |
+| UI/UX | `designer` | sonnet | `**/*.{tsx,jsx,vue,svelte}`, components | `specialists/ui-ux.md` |
+| Design | `designer` | sonnet | `**/*.{css,scss,sass,less}`, styles, design tokens | `specialists/design.md` |
+| DevOps | `build-fixer` | sonnet | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` | `specialists/devops.md` |
+| Documentation | `writer` | sonnet | `**/*.md`, `docs/**`, public-API surface | `specialists/documentation.md` |
+| Observability | `code-reviewer` | sonnet | log / metric / trace SDK calls, observability libs | `specialists/observability.md` |
+| API/Contract | `code-reviewer` | opus | `**/api/**`, OpenAPI / GraphQL / proto, exported public types, **new endpoint accepting user-controlled identifiers** | `specialists/api-contract.md` |
+| Systems Performance | `code-reviewer` | opus | native code, locks, atomics, hot paths, `bench/**` | `specialists/systems-performance.md` |
+| Security Deep | `security-reviewer` | opus | crypto, auth flows, supply-chain, sandboxing, **new endpoint accepting user-controlled identifiers (BOLA surface)** | `specialists/security-deep.md` |
 
-When a specialist dispatches, the matching core reviewer still runs — the specialist adds depth, not replacement.
+`quality-reviewer` is dispatched twice intentionally (sonnet for Quality, opus for Performance). When a system specialist dispatches, the matching core reviewer still runs — specialist adds depth, not replacement.
 
-**Reviewer report format and aggregation rules:** see `references/review-output.md`.
+**Load only the brief files for reviewers you actually dispatch.** Multiple specialists may dispatch on the same diff; deduplication happens at aggregation time.
+
+**Report format and aggregation:** see `references/review-output.md`.
 
 ## Stage 4: Resolve & Merge
 
