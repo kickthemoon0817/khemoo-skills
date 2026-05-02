@@ -1,7 +1,7 @@
 # Documentation Reviewer
 
 **Agent:** `writer`
-**Model:** haiku
+**Model:** sonnet
 **Trigger globs:** `**/*.md`, `docs/**`, README files, and any change that alters a public API surface (exported functions, CLI flags, HTTP routes, config keys)
 
 ## Focus
