@@ -40,7 +40,7 @@ Before running, detect the current state and start at the **first** stage below 
 - `docs/<short-slug>` for docs-only changes
 - `refactor/<short-slug>`, `chore/<short-slug>`, `test/<short-slug>`, etc. for the matching Conventional Commits type
 
-The slug is a 2–4 word summary of the change (e.g. `fix/empty-diff-handling`, `docs/vc-khemoo-bump-rules`). Run `git switch -c <branch>` (preferred over the older `git checkout -b`; `switch` was introduced in Git 2.23 to separate branch operations from file restoration), announce the branch name, then continue with Stage 1.
+The slug is a 2–4 word summary of the change (e.g. `fix/empty-diff-handling`, `docs/vc-khemoo-bump-rules`). Run `git switch -c <branch>`, announce the branch name, then continue with Stage 1.
 
 Only stop and ask if (a) the user has explicitly said to commit on the default branch for this session, or (b) branch creation fails (e.g., repo policy or permissions). Never silently commit to the default branch.
 
