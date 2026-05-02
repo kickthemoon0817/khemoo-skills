@@ -7,8 +7,6 @@ description: Use when there are uncommitted changes in the working tree, an unme
 
 ## Overview
 
-End-to-end version control workflow: micro-unit commits, PR creation, multi-role review with subagents, merge, and semver-based releases/tags.
-
 **Core principle:** Every change flows through commit → PR → review → merge → release. Context detection picks up from wherever you are.
 
 **Announce at start:** "Using vc-khemoo to run the version control pipeline."
