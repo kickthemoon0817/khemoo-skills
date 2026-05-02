@@ -151,77 +151,28 @@ gh pr merge <pr-number> --squash --delete-branch
 
 ## Stage 5: Version & Release
 
-Versions follow strict semver `vMAJOR.MINOR.PATCH` (e.g. `v0.1.1`, `v1.0.0`).
+Versions follow strict semver `vMAJOR.MINOR.PATCH` (e.g. `v0.1.1`).
 
-**Default rule (no user override):**
-- **Major / Minor bump → git tag + GitHub Release**
-- **Patch bump → git tag only, no GitHub Release**
+**Default:** major / minor → git tag + GitHub Release. Patch → git tag only.
 
-The user can override with explicit args: `--github-release` to force a Release, `--tag-only` to suppress one. **"Explicit" means the user typed the flag or the literal words "GitHub release" / "release page".** Importance, security implications, urgency, or inferred intent (e.g. "make sure people see this") do **not** qualify — escalate by asking, not by acting.
+**Default bump bias is patch.** For minor/major decisions, the bump table, anti-rationalization rules, the confirmation gate, and the explicit-override definition, see `references/bump-decision.md`. Patches do not need confirmation.
 
-**Bump detection (from commits since last semver tag):**
-
-**Default bias: patch.** Most changes are patches. Only bump minor/major when the evidence is unambiguous.
-
-Find the last semver tag and enumerate commits since then:
+**Find the last semver tag and enumerate commits since then:**
 ```bash
 LAST_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 git log ${LAST_TAG:+${LAST_TAG}..}HEAD --oneline
 ```
-If `LAST_TAG` is empty (no semver tags exist), the command lists all commits — that is expected for the first release. Use the same `LAST_TAG` everywhere in this stage.
 
-If commits mix levels, take the highest **after** applying the rules below.
+**Apply the bump:**
+- Strip the leading `v` from `LAST_TAG` for the numeric version. If empty, start at `0.1.0`.
+- Major: `X.Y.Z` → `X+1.0.0`. Minor: `X.Y.Z` → `X.Y+1.0`. Patch: `X.Y.Z` → `X.Y.Z+1`.
 
-| Commit content | Bump |
-|----------------|------|
-| `BREAKING CHANGE:` footer, or `!` after type (`feat!:`, `refactor!:`) | Major |
-| A **substantial** new user-facing capability — large enough to be the headline of release notes (e.g., a new top-level command, a new full subsystem, a new public skill) AND the PR body has a non-empty `Release-Note` line written for end users | Minor |
-| Everything else — fixes, docs, refactors, chores, tests, perf, dep bumps, internal helpers, small new options, small new helpers, narrow additive features. **Type prefix does not determine bump level** — only the headline test and `!` / `BREAKING CHANGE:` markers do | Patch |
-
-**The release-headline test (hard rule):** If you cannot write a one-sentence release-note headline that an end user would care about, it is a **patch**. The `Release-Note` line in the PR body is the artifact of this test — if it says "none — internal change", it is a patch.
-
-**Do NOT bump minor for:**
-- Renaming an existing skill, command, function, or file (refactor → patch, even if user-visible)
-- Adding an internal helper or private function
-- Tightening or expanding a doc, error message, or log line
-- Adjusting defaults for an existing option
-- Refactors that happen to expose an existing capability more clearly
-- A `feat:`-prefixed commit whose body shows it was actually a refactor or fix
-- A small feature — a new flag on an existing command, a new minor option, a new small helper, a single-line additive change
-- **Volume of commits.** Ten `fix:` commits is still a patch. Number of commits never justifies a minor.
-- **The presence of the words "add", "new", or `feat:`.** None of these alone justify a minor.
-- **Sophistication, hardening, tightening, or refinement of an existing skill, command, or feature** — even if it changes observed behavior. The user-facing surface did not gain a new capability; it got better at what it already did. Examples that are still patches: tighter validation, stricter defaults, new internal sections of a skill doc, anti-rationalization rules, additional edge-case handling, hardening against existing failure modes. None of these are headline-worthy from an end user's perspective.
-
-**0.x phase rule:** Bump minor only for additions a downstream user upgrading from `v0.A.x` to `v0.A+1.0` would notice immediately. Reserve minor for changes that would warrant a blog post or a top-line changelog entry.
-
-**Confirmation gate (unconditional and synchronous):** Before bumping minor or major, state the proposed bump and the specific commit(s) that justify it, then ask the user to confirm. Patches do not need confirmation.
-
-> Proposing **minor** bump `v0.1.1 → v0.2.0` based on:
-> - `feat: add new top-level /vc-khemoo brainstorm pipeline (5 stages)` (new full subsystem)
->
-> Confirm, or downgrade to patch?
-
-A general "release it" / "ship it" / "do the release" instruction is **not** confirmation of a bump level. Autonomous modes (autopilot, ralph, ultrawork, etc.) must either downgrade to patch or halt at the gate; they may not self-confirm.
-
-**Also ask before tagging if** any commit since the last tag contains `BREAKING CHANGE`, `!` after the type, or the literal word "breaking" (any case) anywhere in the message. These are signals that the bump may be major regardless of what the bump table says.
-
-When in doubt, bump patch.
-
-**Bump the version:**
-1. Read `LAST_TAG` from above. Strip the leading `v` for the numeric version. If empty, start at `0.1.0`.
-2. Apply the bump:
-   - Major: `X.Y.Z` → `X+1.0.0`
-   - Minor: `X.Y.Z` → `X.Y+1.0`
-   - Patch: `X.Y.Z` → `X.Y.Z+1`
-3. If the project has version files (e.g. `.claude-plugin/plugin.json`, `package.json`, `pyproject.toml`, `Cargo.toml`), update them and commit as `chore: bump to v<version>`. **Push that commit to the remote before tagging:**
-
+**Update version files** (e.g. `.claude-plugin/plugin.json`, `package.json`, `pyproject.toml`, `Cargo.toml`) and commit as `chore: bump to v<version>`. Push the bump commit before tagging so the tag references a SHA the remote has:
 ```bash
 git push origin HEAD
 ```
 
-Otherwise the tag will reference a commit the remote does not have.
-
-**Run the release commands** — see `references/release-commands.md` for the exact `git tag` / `git push` / `gh release create` invocations. Do **not** call `gh release create` for a patch unless the user explicitly asked (per the explicit-ask definition above).
+**Run the release commands** — see `references/release-commands.md`. Patch is tag-only; major / minor adds the GitHub Release. Do **not** call `gh release create` for a patch unless the user explicitly asked.
 
 ## Red Flags
 
