@@ -12,4 +12,4 @@ Used by Stage 3 of the vc-khemoo pipeline. All 5 are dispatched on every review 
 
 `quality-reviewer` is dispatched twice intentionally — once at sonnet for breadth (quality lens) and once at opus for depth (performance lens). Run them as two separate sessions; do not merge.
 
-Each reviewer returns the structured report defined in Stage 3 of SKILL.md.
+Report format and aggregation rules: see `review-output.md`.
