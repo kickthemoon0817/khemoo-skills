@@ -1,55 +1,36 @@
 # Bump Decision Rules
 
-Used by Stage 5 of the vc-khemoo pipeline. Loaded only when the agent is considering whether a release should be a minor or major bump (vs the patch default).
-
-## Default bias: patch
-
-Most changes are patches. Only bump minor/major when the evidence is unambiguous. **When in doubt, bump patch.**
+Used by Stage 5 when considering minor or major (vs the patch default).
 
 ## Bump table
 
-| Commit content | Bump |
-|----------------|------|
-| `BREAKING CHANGE:` footer, or `!` after type (`feat!:`, `refactor!:`) | Major |
-| A **substantial** new user-facing capability — large enough to be the headline of release notes (e.g., a new top-level command, a new full subsystem, a new public skill) AND the PR body has a non-empty `Release-Note` line written for end users | Minor |
-| Everything else — fixes, docs, refactors, chores, tests, perf, dep bumps, internal helpers, small new options, narrow additive features. **Type prefix does not determine bump level** — only the headline test and `!` / `BREAKING CHANGE:` markers do | Patch |
+| Markers in commits since last tag | Bump |
+|-----------------------------------|------|
+| `BREAKING CHANGE:` footer or `!` after the type | Major |
+| Substantial new user-facing capability AND PR body has a non-empty `Release-Note` line — passes the **release-headline test**: one sentence an end user would care about | Minor |
+| Anything else | Patch |
 
-## Release-headline test (hard rule)
+Type prefix does not determine bump level. Volume of commits does not justify a minor. Words like "add", "new", `feat:` alone do not justify a minor.
 
-If you cannot write a one-sentence release-note headline that an end user would care about, it is a **patch**. The `Release-Note` line in the PR body is the artifact of this test — if it says "none — internal change", it is a patch.
+## Patch by default
 
-## Do NOT bump minor for
+These are **always** patches, even when they look additive or change observed behavior:
 
-- Renaming an existing skill, command, function, or file (refactor → patch, even if user-visible)
-- Adding an internal helper or private function
-- Tightening or expanding a doc, error message, or log line
-- Adjusting defaults for an existing option
-- Refactors that happen to expose an existing capability more clearly
-- A `feat:`-prefixed commit whose body shows it was actually a refactor or fix
-- A small feature — a new flag on an existing command, a new minor option, a new small helper, a single-line additive change
-- **Volume of commits.** Ten `fix:` commits is still a patch. Number of commits never justifies a minor.
-- **The presence of the words "add", "new", or `feat:`.** None of these alone justify a minor.
-- **Sophistication, hardening, tightening, or refinement of an existing skill, command, or feature** — even if it changes observed behavior. The user-facing surface did not gain a new capability; it got better at what it already did. Examples that are still patches: tighter validation, stricter defaults, new internal sections of a skill doc, anti-rationalization rules, additional edge-case handling, hardening against existing failure modes.
+- Renames, internal helpers, doc/error/log tweaks, default adjustments, refactors that expose existing capability
+- Small features: new flag, minor option, new small helper, single-line additive change
+- Sophistication, hardening, tightening, or refinement — the user-facing surface didn't gain a new capability, it got better at what it already did
+- `feat:`-prefixed commits whose body shows they were actually refactors or fixes
 
-## 0.x phase rule
+## 0.x phase
 
-Bump minor only for additions a downstream user upgrading from `v0.A.x` to `v0.A+1.0` would notice immediately. Reserve minor for changes that would warrant a blog post or a top-line changelog entry.
+The bar is *higher*, not lower. Bump minor only for additions a downstream user upgrading from `v0.A.x` to `v0.A+1.0` would notice immediately — changes that warrant a blog post or top-line changelog entry.
 
-## Confirmation gate (unconditional and synchronous)
+## Confirmation gate
 
-Before bumping minor or major, state the proposed bump and the specific commit(s) that justify it, then ask the user to confirm. Patches do not need confirmation.
+Before bumping minor or major, state the proposed bump + the justifying commit(s) and ask the user. Patches do not need confirmation. "Release it" / "ship it" is **not** confirmation of a bump level — autonomous modes (autopilot, ralph, ultrawork) must downgrade to patch or halt.
 
-> Proposing **minor** bump `v0.1.1 → v0.2.0` based on:
-> - `feat: add new top-level /vc-khemoo brainstorm pipeline (5 stages)` (new full subsystem)
->
-> Confirm, or downgrade to patch?
+**Also ask** if any commit since the last tag contains `BREAKING CHANGE`, `!` after the type, or the literal word "breaking" — these may be major regardless of the table.
 
-A general "release it" / "ship it" / "do the release" instruction is **not** confirmation of a bump level. Autonomous modes (autopilot, ralph, ultrawork, etc.) must either downgrade to patch or halt at the gate; they may not self-confirm.
+## Explicit Release override
 
-**Also ask before tagging if** any commit since the last tag contains `BREAKING CHANGE`, `!` after the type, or the literal word "breaking" (any case) anywhere in the message. These are signals that the bump may be major regardless of what the bump table says.
-
-## Explicit user override
-
-The user can override the default release-publication rule with explicit args: `--github-release` to force a Release on a patch, `--tag-only` to suppress a Release on a minor/major.
-
-**"Explicit" means the user typed the flag or the literal words "GitHub release" / "release page".** Importance, security implications, urgency, or inferred intent (e.g. "make sure people see this") do **not** qualify — escalate by asking, not by acting.
+The user can force `--github-release` on a patch or `--tag-only` on a minor/major. **"Explicit"** means the typed flag or the literal words "GitHub release" / "release page". Importance, security, urgency, or inferred intent do **not** qualify — escalate by asking, not by acting.
