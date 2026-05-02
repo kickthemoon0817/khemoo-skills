@@ -122,13 +122,27 @@ When a specialist dispatches, the matching core reviewer still runs — the spec
 
 ## Stage 4: Resolve & Merge
 
-1. Collect all review findings from Stage 3 **and** any pre-existing comments on the PR. Fetch existing GitHub comments with `gh pr view <pr> --json comments,reviews` and parse them as additional findings.
-2. For each issue flagged (subagent or human):
-   - Fix the issue as a new micro-unit commit (Stage 1 rules apply)
+1. Collect all review findings from Stage 3 **and** any pre-existing PR comments. Fetch existing GitHub comments with `gh pr view <pr> --json comments,reviews` and parse them as additional findings.
+
+2. **Triage each finding** as fix-now or defer-to-issue:
+   - **Fix now (mandatory):** every `critical` issue, every `REQUEST_CHANGES` verdict, every finding inside this PR's stated scope.
+   - **Defer to issue:** out-of-scope findings, architectural concerns that need separate design, cross-cutting refactors that would balloon this PR. Major/minor only — never defer `critical` or `REQUEST_CHANGES`.
+
+3. **For each fix-now finding:**
+   - Fix as a new micro-unit commit (Stage 1 rules apply)
    - Push fixes to the PR branch
-3. If any fixes were made, re-run Stage 3 on the new diff
-4. Repeat until all reviewers return `APPROVE` and all human comments are addressed/replied
-5. Merge the PR. **Use merge commit (preserves micro-unit history) unless the user explicitly says "squash" for this PR.** "Squash by default" or "team prefers squash" do not count as explicit unless re-stated for this PR.
+   - Record the (finding, fix-commit-sha) pair for the resolution comment
+
+4. **For each defer-to-issue finding:**
+   - Create a GitHub issue using `references/deferred-issue-template.md`
+   - Record the (finding, issue-number) pair
+   - If the finding came from a human PR comment, reply on the PR explaining the deferral and linking the issue
+
+5. If any fixes were pushed, re-run Stage 3 on the new diff and loop back to step 1.
+
+6. Once all findings are either fixed or deferred, post a single resolution comment on the PR using `references/resolved-findings-comment.md`. List every fixed finding with its fix-commit SHA and every deferred finding with its issue number. Every human PR comment must be replied to (either "fixed in `<sha>`" or "deferred to #`<issue>`").
+
+7. Merge the PR. **Use merge commit (preserves micro-unit history) unless the user explicitly says "squash" for this PR.** "Squash by default" or "team prefers squash" do not count as explicit unless re-stated for this PR.
 
 ```bash
 gh pr merge <pr-number> --merge --delete-branch
