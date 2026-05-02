@@ -4,7 +4,7 @@ Claude Code plugin with version control workflow skills.
 
 ## Skills
 
-### `/khemoo-vc` — Version Control Pipeline
+### `/vc-khemoo` — Version Control Pipeline
 
 End-to-end version control workflow:
 
@@ -34,9 +34,9 @@ claude --plugin-dir /path/to/khemoo-skills
 Inside a Claude Code session:
 
 ```
-/khemoo-vc              # full pipeline from detected state
-/khemoo-vc commit       # micro-unit commit only
-/khemoo-vc release patch  # release/tag only
+/vc-khemoo              # full pipeline from detected state
+/vc-khemoo commit       # micro-unit commit only
+/vc-khemoo release patch  # release/tag only
 ```
 
 ## License

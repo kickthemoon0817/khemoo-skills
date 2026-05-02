@@ -1,5 +1,5 @@
 ---
-name: khemoo-vc
+name: vc-khemoo
 description: Use when completing work that needs version control - committing changes, creating PRs, running multi-role code reviews, merging, and creating releases or tags. Triggers on uncommitted changes, unreviewed PRs, or post-merge versioning needs.
 ---
 
@@ -11,7 +11,7 @@ End-to-end version control workflow: micro-unit commits, PR creation, multi-role
 
 **Core principle:** Every change flows through commit → PR → review → merge → release. Context detection picks up from wherever you are.
 
-**Announce at start:** "Using khemoo-vc to run the version control pipeline."
+**Announce at start:** "Using vc-khemoo to run the version control pipeline."
 
 ## Context Detection
 
@@ -47,9 +47,9 @@ digraph context {
 ```
 
 **Sub-command overrides:**
-- `/khemoo-vc` — full pipeline from detected state
-- `/khemoo-vc commit` — Stage 1 only
-- `/khemoo-vc release major|minor|patch` — Stage 5 only
+- `/vc-khemoo` — full pipeline from detected state
+- `/vc-khemoo commit` — Stage 1 only
+- `/vc-khemoo release major|minor|patch` — Stage 5 only
 
 ## Stage 1: Micro-Unit Commit
 
