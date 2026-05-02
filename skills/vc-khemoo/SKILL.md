@@ -99,44 +99,7 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
 4. Generate PR body from micro-commit messages
 5. Create PR
 
-**PR title format:** `<Type>: <Subject>` (e.g. `Feat: Add New Button Component`)
-
-Types (capitalized for the title): `Feat`, `Fix`, `Docs`, `Style`, `Refactor`, `Perf`, `Test`, `Build`, `Ci`, `Chore`, `Revert`
-
-```bash
-gh pr create --title "<Type>: <Subject>" --body "$(cat <<'EOF'
-## Summary
-
-<what changed and why>
-
-## Changes
-
--
-
-## How to Test
-
--
-
-## Release-Note
-
-<one sentence an end user would care about, OR "none — internal change">
-
-## Checklist
-
-### Testing
-- [ ] Tests added/updated (or N/A with reason)
-- [ ] Verified manually
-
-### Compatibility
-- [ ] Breaking changes noted (if any)
-
-### Documentation
-- [ ] Docs/config updated (if needed)
-EOF
-)"
-```
-
-Fill in Summary, Changes, How to Test, and Release-Note from micro-commit messages. Report the PR URL. The Release-Note line is consumed by Stage 5 to decide patch vs minor.
+**PR title and body template** — see `references/pr-body-template.md` for the full title format, capitalized type list, and `gh pr create` invocation. Title is `<Type>: <Subject>`. Body has Summary, Changes, How to Test, **Release-Note** (consumed by Stage 5 for patch-vs-minor), and Checklist. Fill from micro-commit messages and report the PR URL.
 
 ## Stage 3: Multi-Role Review
 
@@ -173,14 +136,7 @@ The reviewer dispatch below is identical regardless of scope — only the diff i
 
 `quality-reviewer` is dispatched twice intentionally — once at sonnet for breadth (quality lens) and once at opus for depth (performance lens). Run them as two separate sessions; do not merge.
 
-**Specialist reviewers (dispatched when matching files appear in the diff):**
-
-| Reviewer | Focus | Agent | Trigger (file globs / paths) |
-|----------|-------|-------|------------------------------|
-| UI/UX Reviewer | Usability, interaction flow, accessibility, responsiveness | `designer` (sonnet) | `**/*.{tsx,jsx,vue,svelte}`, `**/components/**`, `**/templates/**` |
-| Design Reviewer | Visual consistency, design system adherence, spacing, color | `designer` (sonnet) | `**/*.{css,scss,sass,less}`, `**/styles/**`, design tokens |
-| DevOps Reviewer | CI/CD impact, Dockerfile, deployment, infra config | `build-fixer` (sonnet) | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` |
-| Documentation Reviewer | Docs clarity, API docs, inline comments, README | `writer` (haiku) | `**/*.md`, `docs/**`, public-API surface changes |
+**Specialist reviewers** (dispatched when matching files appear in the diff): see `references/specialist-reviewers.md` for the full table of agents and trigger globs (UI/UX, Design, DevOps, Documentation). Specialists run in parallel alongside the core 5.
 
 Each reviewer produces a structured report:
 
@@ -295,53 +251,11 @@ git push origin HEAD
 
 Otherwise the tag will reference a commit the remote does not have.
 
-**Major / Minor — tag + GitHub Release:**
-```bash
-git tag -a v<version> -m "Release v<version>"
-git push origin v<version>
-
-gh release create v<version> --title "v<version>" --notes "$(cat <<'EOF'
-## What's Changed
-<grouped changes from commits since last tag>
-
-**Full Changelog**: <compare URL>
-EOF
-)"
-```
-
-**Patch — tag only:**
-```bash
-git tag -a v<version> -m "v<version>: <summary>"
-git push origin v<version>
-```
-
-Do **not** call `gh release create` for a patch unless the user explicitly asked (per the explicit-ask definition above).
+**Run the release commands** — see `references/release-commands.md` for the exact `git tag` / `git push` / `gh release create` invocations. Patch is tag-only; major / minor adds the GitHub Release. Do **not** call `gh release create` for a patch unless the user explicitly asked (per the explicit-ask definition above).
 
 ## Common Mistakes
 
-**Omnibus commits**
-- Problem: One commit with 10 unrelated changes
-- Fix: Split by concern. If message needs "and", split it.
-
-**Skipping review**
-- Problem: Merge without multi-role review
-- Fix: Always run all 5 core reviewers. Dispatch specialists when changes warrant them.
-
-**Wrong version bump**
-- Problem: Tagging a breaking change as patch
-- Fix: Before tagging, scan commits for `BREAKING CHANGE`, `!`, or the word "breaking" — if any match, ask before tagging.
-
-**Premature minor**
-- Problem: Bumping `v0.1.1 → v0.2.0` for a small additive change
-- Fix: Apply the release-headline test. If you cannot write a one-sentence headline a user would care about, it is a patch.
-
-**Tag points at missing commit**
-- Problem: Tagging the local version-bump commit before pushing it, so the remote tag references a SHA the remote does not have.
-- Fix: `git push origin HEAD` before `git push origin v<version>`.
-
-**Merging with unresolved issues**
-- Problem: Critical issues ignored
-- Fix: Fix-and-review loop until all `APPROVE`.
+See `references/common-mistakes.md` for problem/fix pairs covering: omnibus commits, skipping review, wrong version bump, premature minor, tag points at missing commit, merging with unresolved issues, and self-confirming a minor in autonomous mode.
 
 ## Red Flags
 
