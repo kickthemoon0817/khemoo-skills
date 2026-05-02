@@ -136,7 +136,14 @@ The reviewer dispatch below is identical regardless of scope — only the diff i
 
 `quality-reviewer` is dispatched twice intentionally — once at sonnet for breadth (quality lens) and once at opus for depth (performance lens). Run them as two separate sessions; do not merge.
 
-**Specialist reviewers** (dispatched when matching files appear in the diff): see `references/specialist-reviewers.md` for the full table of agents and trigger globs (UI/UX, Design, DevOps, Documentation). Specialists run in parallel alongside the core 5.
+**Specialist reviewers** (dispatched when matching files appear in the diff): see `references/specialists/README.md` for the trigger table. Each specialist has its own focused reference file with role-specific checklist and anti-noise guidance — load the matching file when dispatching:
+
+- UI/UX → `references/specialists/ui-ux.md`
+- Design → `references/specialists/design.md`
+- DevOps → `references/specialists/devops.md`
+- Documentation → `references/specialists/documentation.md`
+
+Specialists run in parallel alongside the core 5.
 
 Each reviewer produces a structured report:
 
