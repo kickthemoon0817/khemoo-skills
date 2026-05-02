@@ -2,11 +2,7 @@
 
 Used by Stage 5 of the vc-khemoo pipeline. Pick the block that matches the bump level.
 
-Both blocks assume the version-bump commit (e.g. updating `plugin.json`, `package.json`) has already been **pushed to the remote** so the tag references a SHA the remote has:
-
-```bash
-git push origin HEAD
-```
+Both blocks assume the version-bump commit has already been pushed (`git push origin HEAD`).
 
 ## Patch — tag only (no GitHub Release)
 
@@ -15,7 +11,7 @@ git tag -a v<version> -m "v<version>: <summary>"
 git push origin v<version>
 ```
 
-Do **not** call `gh release create` for a patch unless the user explicitly asked — see Stage 5's "explicit-ask" definition. Importance, security implications, and inferred intent do not qualify.
+Do **not** call `gh release create` for a patch unless the user explicitly asked — see Stage 5's "explicit-ask" definition.
 
 ## Major / Minor — tag + GitHub Release
 

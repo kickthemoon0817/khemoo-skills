@@ -10,7 +10,7 @@ Used by Stage 3 of the vc-khemoo pipeline. Specialists run **in parallel** along
 |------------|----------------|------------------------|
 | UI/UX | `ui-ux.md` | `**/*.{tsx,jsx,vue,svelte}`, `**/components/**`, `**/templates/**` |
 | Design | `design.md` | `**/*.{css,scss,sass,less}`, `**/styles/**`, design tokens |
-| DevOps | `devops.md` | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` |
+| DevOps | `devops.md` | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**`, `Makefile`, `.gitlab-ci.yml`, `bitbucket-pipelines.yml` |
 | Documentation | `documentation.md` | `**/*.md`, `docs/**`, public-API surface changes |
 
 ### System specialists
@@ -35,4 +35,4 @@ Specialists are scoped narrowly on purpose. If two specialists could plausibly c
 
 ## Relation to core reviewers
 
-The **Surface** specialists cover lenses the core 5 do not (UI/UX, visual design, infra, docs). The **System** specialists are deeper companions — Observability complements Code Reviewer; API/Contract complements Code Reviewer for breaking-change detection; Systems Performance is a deeper pass than the core Performance Reviewer (which uses `quality-reviewer` at opus); Security Deep is a deeper pass than the core Security Reviewer for high-risk primitives (crypto, auth flows, supply chain). When a system specialist dispatches, the matching core reviewer still runs — the specialist adds depth, it does not replace.
+When a system specialist dispatches, the matching core reviewer still runs — the specialist adds depth, not replacement.

@@ -50,7 +50,7 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
 
 ## Stage 1: Micro-Unit Commit
 
-**Rule: One concern per commit. No omnibus commits.**
+**Rule: One concern per commit.**
 
 1. Run `git status` and `git diff` to see all changes
 2. Analyze changes and group by logical concern (single feature, single fix, single refactor)
@@ -97,7 +97,7 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
 4. Generate PR body from micro-commit messages
 5. Create PR
 
-**PR title and body template** — see `references/pr-body-template.md` for the full title format, capitalized type list, and `gh pr create` invocation. Title is `<Type>: <Subject>`. Body has Summary, Changes, How to Test, **Release-Note** (consumed by Stage 5 for patch-vs-minor), and Checklist. Fill from micro-commit messages and report the PR URL.
+**PR title and body template** — see `references/pr-body-template.md`. The Release-Note line is consumed by Stage 5 for patch-vs-minor. Fill from micro-commit messages and report the PR URL.
 
 ## Stage 3: Multi-Role Review
 
@@ -145,8 +145,8 @@ The reviewer dispatch below is identical regardless of scope — only the diff i
 *System specialists* (deeper companions to the core reviewers):
 - Observability → `references/specialists/observability.md`
 - API / Contract → `references/specialists/api-contract.md`
-- Systems Performance → `references/specialists/systems-performance.md` (deeper than the core Performance Reviewer)
-- Security Deep → `references/specialists/security-deep.md` (deeper than the core Security Reviewer)
+- Systems Performance → `references/specialists/systems-performance.md`
+- Security Deep → `references/specialists/security-deep.md`
 
 Specialists run in parallel alongside the core 5. When a system specialist dispatches, the matching core reviewer still runs — the specialist adds depth, not replacement.
 
@@ -184,10 +184,7 @@ Each reviewer produces a structured report:
 5. Merge the PR. **Use merge commit (preserves micro-unit history) unless the user explicitly says "squash" for this PR.** "Squash by default" or "team prefers squash" do not count as explicit unless re-stated for this PR.
 
 ```bash
-# Default — merge commit
 gh pr merge <pr-number> --merge --delete-branch
-
-# Only when user explicitly says "squash" for this PR
 gh pr merge <pr-number> --squash --delete-branch
 ```
 
@@ -234,7 +231,7 @@ If commits mix levels, take the highest **after** applying the rules below.
 - **The presence of the words "add", "new", or `feat:`.** None of these alone justify a minor.
 - **Sophistication, hardening, tightening, or refinement of an existing skill, command, or feature** — even if it changes observed behavior. The user-facing surface did not gain a new capability; it got better at what it already did. Examples that are still patches: tighter validation, stricter defaults, new internal sections of a skill doc, anti-rationalization rules, additional edge-case handling, hardening against existing failure modes. None of these are headline-worthy from an end user's perspective.
 
-**0.x phase rule:** While the project version is `v0.x.y`, the bar for minor is *higher*, not lower. Pre-1.0, the surface is still being shaped, so semver is not yet a hard contract — but the discipline matters more, not less. Bump minor only for additions large enough that a downstream user upgrading from `v0.A.x` to `v0.A+1.0` would notice them immediately. Internal sophistication, rule tightening, and discipline improvements are patches. Reserve minor bumps for the kind of change that would warrant a blog post or a top-line changelog entry.
+**0.x phase rule:** Bump minor only for additions a downstream user upgrading from `v0.A.x` to `v0.A+1.0` would notice immediately. Reserve minor for changes that would warrant a blog post or a top-line changelog entry.
 
 **Confirmation gate (unconditional and synchronous):** Before bumping minor or major, state the proposed bump and the specific commit(s) that justify it, then ask the user to confirm. Patches do not need confirmation.
 
@@ -247,7 +244,7 @@ A general "release it" / "ship it" / "do the release" instruction is **not** con
 
 **Also ask before tagging if** any commit since the last tag contains `BREAKING CHANGE`, `!` after the type, or the literal word "breaking" (any case) anywhere in the message. These are signals that the bump may be major regardless of what the bump table says.
 
-When in doubt, bump patch. It is cheap to release another patch later; it is awkward to walk back a premature minor.
+When in doubt, bump patch.
 
 **Bump the version:**
 1. Read `LAST_TAG` from above. Strip the leading `v` for the numeric version. If empty, start at `0.1.0`.
@@ -263,7 +260,7 @@ git push origin HEAD
 
 Otherwise the tag will reference a commit the remote does not have.
 
-**Run the release commands** — see `references/release-commands.md` for the exact `git tag` / `git push` / `gh release create` invocations. Patch is tag-only; major / minor adds the GitHub Release. Do **not** call `gh release create` for a patch unless the user explicitly asked (per the explicit-ask definition above).
+**Run the release commands** — see `references/release-commands.md` for the exact `git tag` / `git push` / `gh release create` invocations. Do **not** call `gh release create` for a patch unless the user explicitly asked (per the explicit-ask definition above).
 
 ## Common Mistakes
 

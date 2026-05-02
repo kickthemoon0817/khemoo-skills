@@ -11,8 +11,6 @@
 - Supply-chain surface: postinstall scripts, build-time code execution, registry config, signed-release verification
 - High-trust boundaries: SSO callbacks, password reset flows, account recovery, MFA flows, webhook signature verification
 
-This is the **deep** complement to the core Security Reviewer. The core role catches the OWASP-Top-10 surface (injection, XSS, broken auth basics, trust boundary violations); this role goes deeper on the high-risk primitives most projects only have a few of.
-
 ## Focus
 
 Cryptographic correctness, key & secret lifecycle, sandbox / isolation boundaries, supply-chain attestation, and the design soundness of new auth flows — places where one subtle mistake is catastrophic and untestable from the outside.

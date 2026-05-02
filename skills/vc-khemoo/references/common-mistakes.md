@@ -1,6 +1,6 @@
 # Common Mistakes
 
-Recurring failure modes the vc-khemoo pipeline is designed to prevent. Each entry is a problem/fix pair.
+Recurring failure modes the vc-khemoo pipeline is designed to prevent.
 
 ## Omnibus commits
 

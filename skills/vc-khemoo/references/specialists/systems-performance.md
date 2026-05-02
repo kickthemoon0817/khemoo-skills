@@ -11,8 +11,6 @@
 - IO-heavy code: syscall wrappers, network buffers, file IO, ring buffers
 - `bench/**`, `benches/**`, files with `// perf-critical` markers
 
-This is the **deep** complement to the core Performance Reviewer. The core role catches algorithmic complexity and obvious bottlenecks; this role looks at what happens at the cache, syscall, and lock level.
-
 ## Focus
 
 Cache locality, allocation patterns, lock contention, syscall overhead, IO patterns, and tail latency — what happens in the bottom 1% of requests.
