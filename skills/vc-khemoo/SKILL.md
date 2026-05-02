@@ -113,7 +113,7 @@ The reviewer dispatch below is identical regardless of scope — only the diff i
 
 **Reviewer roster:**
 
-- **Core reviewers (5, always dispatched):** see `references/core-reviewers.md`.
+- **Core reviewers (5, always dispatched):** see `references/cores/README.md` for the roster; each reviewer has its own focused file under `references/cores/` with checklist and anti-noise guidance.
 - **Specialist reviewers (dispatched when matching files appear in the diff):** see `references/specialists/README.md`.
 
 When a specialist dispatches, the matching core reviewer still runs — the specialist adds depth, not replacement.
