@@ -1,6 +1,6 @@
 # Reviewer Report Format and Aggregation
 
-Used by Stage 3 of the vc-khemoo pipeline. Defines the structured output every reviewer (core or specialist) returns, and how to aggregate verdicts to decide what happens next.
+Used by Stage 3 of the vc-khemoo pipeline. Defines the per-reviewer report format and how to aggregate verdicts.
 
 ## Per-reviewer report format
 

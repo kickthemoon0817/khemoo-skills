@@ -8,9 +8,7 @@ Used by Stage 2 of the vc-khemoo pipeline.
 <Type>: <Subject>
 ```
 
-Example: `Feat: Add New Button Component`.
-
-Capitalize whatever type was used in the underlying commits (e.g. `Feat`, `Fix`, `Docker`, `Sim`, `Ros2`, `Auth`). The same permissive type set as Stage 1 applies.
+Capitalize whatever type was used in the underlying commits — `Feat`, `Fix`, `Docker`, `Sim`, `Ros2`, `Auth`, etc. The same permissive type set as Stage 1 applies.
 
 ## Body — `gh pr create` invocation
 
@@ -47,8 +45,4 @@ EOF
 )"
 ```
 
-## Notes
-
-- Fill in Summary, Changes, How to Test, and Release-Note from the micro-commit messages produced in Stage 1.
-- The **Release-Note** line is consumed by Stage 5 to decide patch vs minor — if it says `none — internal change`, Stage 5 treats the change as a patch regardless of `feat:` prefixes.
-- Report the PR URL after creation.
+Fill from Stage 1 micro-commit messages and report the PR URL. The Release-Note line is consumed by Stage 5 — see `bump-decision.md`.
