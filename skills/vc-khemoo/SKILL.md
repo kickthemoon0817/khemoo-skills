@@ -11,13 +11,6 @@ description: Use when there are uncommitted changes in the working tree, an unme
 
 **Announce at start:** "Using vc-khemoo to run the version control pipeline."
 
-## When NOT to Use
-
-- Hotfix branches that bypass review by policy — use the team's hotfix process.
-- Submodule or vendored-dependency version bumps that don't change project source — handle manually.
-- Force-push, history rewrite, or rebase operations — out of scope; they need explicit user approval anyway.
-- Repos without `git` initialized or without a working `gh` (the skill assumes both).
-
 ## Context Detection
 
 Before running, detect the current state and start at the **first** stage below whose condition is true. If none match, there is nothing to do.
@@ -262,10 +255,6 @@ Otherwise the tag will reference a commit the remote does not have.
 
 **Run the release commands** — see `references/release-commands.md` for the exact `git tag` / `git push` / `gh release create` invocations. Do **not** call `gh release create` for a patch unless the user explicitly asked (per the explicit-ask definition above).
 
-## Common Mistakes
-
-See `references/common-mistakes.md` for problem/fix pairs covering: omnibus commits, skipping review, wrong version bump, premature minor, tag points at missing commit, merging with unresolved issues, and self-confirming a minor in autonomous mode.
-
 ## Red Flags
 
 **Never:**
@@ -276,6 +265,7 @@ See `references/common-mistakes.md` for problem/fix pairs covering: omnibus comm
 - Force-push without explicit user request
 - Squash-merge unless the user explicitly said "squash" for this PR
 - Create a release without checking version history
+- Bump minor or major for sophistication, hardening, or refinement of an existing feature
 - Self-confirm a minor or major bump in autonomous mode
 - Call `gh release create` for a patch without explicit user request
 
@@ -285,4 +275,5 @@ See `references/common-mistakes.md` for problem/fix pairs covering: omnibus comm
 - All 5 core reviewers for every PR, specialists when relevant
 - Fix critical issues before merge
 - Filter to semver tags (`^v\d+\.\d+\.\d+$`) when reading version history
+- Scan commits for `BREAKING CHANGE`, `!`, or "breaking" before tagging — ask before bumping if any match
 - Push the version-bump commit before pushing the tag
