@@ -3,6 +3,7 @@
 **Agent:** `code-reviewer`
 **Model:** sonnet
 **Trigger globs / signals:**
+
 - `**/logger*.{ts,js,py,go,rs}`, `**/log/**`, `**/logging/**`
 - `**/metrics/**`, `**/tracing/**`, `**/telemetry/**`
 - Files importing `@opentelemetry/*`, `prom-client`, `@sentry/*`, `datadog-*`, `winston`, `pino`, `structlog`

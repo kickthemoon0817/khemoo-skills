@@ -3,6 +3,7 @@
 **Agent:** `code-reviewer`
 **Model:** opus
 **Trigger globs / signals:**
+
 - Native / systems code: `*.{c,cpp,h,hpp,rs,zig,go}`
 - Files with `unsafe` blocks (Rust), raw pointer arithmetic, manual memory management
 - Lock primitives: `Mutex`, `RwLock`, atomic operations, lock-free structures, `sync.*`

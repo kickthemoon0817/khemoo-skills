@@ -3,6 +3,7 @@
 **Agent:** `security-reviewer`
 **Model:** opus
 **Trigger globs / signals:**
+
 - Crypto code: `**/crypto/**`, files importing `crypto`, `subtle`, `bcrypt`, `argon2`, `scrypt`, `nacl`, `libsodium`, `noble-*`, `tweetnacl`
 - Auth & sessions: `**/auth/**`, `**/sessions/**`, `**/oauth/**`, `**/saml/**`, files importing `jsonwebtoken`, `passport`, OAuth/OIDC libs
 - Secrets lifecycle: secret managers, KMS, vault integrations, key rotation code
