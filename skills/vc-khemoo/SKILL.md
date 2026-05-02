@@ -136,14 +136,21 @@ The reviewer dispatch below is identical regardless of scope — only the diff i
 
 `quality-reviewer` is dispatched twice intentionally — once at sonnet for breadth (quality lens) and once at opus for depth (performance lens). Run them as two separate sessions; do not merge.
 
-**Specialist reviewers** (dispatched when matching files appear in the diff): see `references/specialists/README.md` for the trigger table. Each specialist has its own focused reference file with role-specific checklist and anti-noise guidance — load the matching file when dispatching:
+**Specialist reviewers** (dispatched when matching files appear in the diff): see `references/specialists/README.md` for the trigger table. Each specialist has its own focused reference file with role-specific checklist and anti-noise guidance — load the matching file when dispatching.
 
+*Surface specialists* (cover lenses the core 5 do not):
 - UI/UX → `references/specialists/ui-ux.md`
 - Design → `references/specialists/design.md`
 - DevOps → `references/specialists/devops.md`
 - Documentation → `references/specialists/documentation.md`
 
-Specialists run in parallel alongside the core 5.
+*System specialists* (deeper companions to the core reviewers):
+- Observability → `references/specialists/observability.md`
+- API / Contract → `references/specialists/api-contract.md`
+- Systems Performance → `references/specialists/systems-performance.md` (deeper than the core Performance Reviewer)
+- Security Deep → `references/specialists/security-deep.md` (deeper than the core Security Reviewer)
+
+Specialists run in parallel alongside the core 5. When a system specialist dispatches, the matching core reviewer still runs — the specialist adds depth, not replacement.
 
 Each reviewer produces a structured report:
 

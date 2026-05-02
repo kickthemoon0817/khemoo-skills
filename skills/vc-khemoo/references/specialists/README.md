@@ -4,12 +4,23 @@ Used by Stage 3 of the vc-khemoo pipeline. Specialists run **in parallel** along
 
 ## Trigger table
 
+### Surface specialists
+
 | Specialist | Reference file | Trigger globs / paths |
 |------------|----------------|------------------------|
 | UI/UX | `ui-ux.md` | `**/*.{tsx,jsx,vue,svelte}`, `**/components/**`, `**/templates/**` |
 | Design | `design.md` | `**/*.{css,scss,sass,less}`, `**/styles/**`, design tokens |
 | DevOps | `devops.md` | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` |
 | Documentation | `documentation.md` | `**/*.md`, `docs/**`, public-API surface changes |
+
+### System specialists
+
+| Specialist | Reference file | Trigger globs / paths |
+|------------|----------------|------------------------|
+| Observability | `observability.md` | `**/logger*`, `**/metrics/**`, `**/tracing/**`, OpenTelemetry / Sentry / Prometheus SDK calls, any diff that adds/removes log or metric emissions |
+| API / Contract | `api-contract.md` | `**/openapi.{yaml,json}`, `*.proto`, `*.graphql`, `**/routes/**`, `**/controllers/**`, `**/handlers/**`, public type exports |
+| Systems Performance | `systems-performance.md` | `*.{c,cpp,rs,zig,go}`, `unsafe` blocks, lock primitives, atomics, hot-path code (parsers, codecs, math kernels), `bench/**`, `// perf-critical` markers |
+| Security Deep | `security-deep.md` | `**/crypto/**`, `**/auth/**`, `**/sessions/**`, `**/oauth/**`, JWT / OAuth / signature-verification code, secret managers, sandbox / isolation code, supply-chain surface (postinstall, build-time exec) |
 
 ## How to dispatch
 
@@ -21,3 +32,7 @@ For each specialist whose globs match any path in the diff:
 4. Collect the structured report (same format as core reviewers — see Stage 3 in SKILL.md)
 
 Specialists are scoped narrowly on purpose. If two specialists could plausibly cover the same finding, both should run; deduplication happens at aggregation time, not dispatch time.
+
+## Relation to core reviewers
+
+The **Surface** specialists cover lenses the core 5 do not (UI/UX, visual design, infra, docs). The **System** specialists are deeper companions — Observability complements Code Reviewer; API/Contract complements Code Reviewer for breaking-change detection; Systems Performance is a deeper pass than the core Performance Reviewer (which uses `quality-reviewer` at opus); Security Deep is a deeper pass than the core Security Reviewer for high-risk primitives (crypto, auth flows, supply chain). When a system specialist dispatches, the matching core reviewer still runs — the specialist adds depth, it does not replace.
