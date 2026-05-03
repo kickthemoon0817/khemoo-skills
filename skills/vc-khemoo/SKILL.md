@@ -52,14 +52,9 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
    - Write a Conventional Commits message (format below)
    - Commit
 
-**Splitting heuristic:**
-- Different files touching different features → separate commits
-- Test + implementation for same feature → one commit
-- Formatting/lint fixes → separate commit from logic changes
-- Config changes → separate from code changes
-- **If a change does not fit a listed heuristic, default to splitting.**
+**Splitting heuristic** — separate commits for: different features in different files; formatting/lint fixes; config changes; anything that doesn't clearly fit. Test + implementation for the same feature → one commit.
 
-**Commit message format (Conventional Commits, required for Stage 5 bump detection):**
+**Commit message format:**
 ```
 <type>[!]: <short imperative description>
 
@@ -68,12 +63,9 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
 <optional footers, e.g. BREAKING CHANGE: ...>
 ```
 
-**Type:** A short lowercase word naming the domain or category of the change. Standard categories work (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`); domain-specific types are also fine when they explain the change better (`docker`, `sim`, `ros2`, `auth`, `api`, `db`, etc.). One word, lowercase, no punctuation. **Do not use the parenthesized scope form** (`feat(auth):`, `fix(api):`, etc.) — the type alone is enough. Use `!` after the type to mark a breaking change (`feat!:`, `docker!:`). Use the `BREAKING CHANGE:` footer to describe the break.
+**Type:** short lowercase word — standard categories (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`) or domain-specific (`docker`, `sim`, `auth`, `api`, etc.). **No parenthesized scope** (`feat(auth):` etc.) — type alone. Use `!` for breaking changes (`feat!:`); `BREAKING CHANGE:` footer describes the break.
 
-**Red flags — stop and re-split:**
-- Commit touches 5+ unrelated files
-- Message needs "and" to describe the change
-- Mix of feature code and unrelated cleanup
+**Red flags — stop and re-split:** 5+ unrelated files; message needs "and"; mix of feature code and unrelated cleanup.
 
 ## Stage 2: Create PR
 
@@ -90,26 +82,19 @@ Only stop and ask if (a) the user has explicitly said to commit on the default b
 
 ## Stage 3: Multi-Role Review
 
-Dispatch **parallel** review subagents. Each reviews a single diff independently. **There is no "too small to review" exemption** — diff size, language, and apparent triviality do not exempt a change from review. Re-runs after fixes also dispatch all core reviewers.
+Dispatch parallel review subagents. **No "too small to review" exemption** — diff size, language, and triviality do not exempt a change.
 
-**Review scopes (pick one):**
+**Review scopes:**
 
-| Scope | Diff source | Use when |
-|-------|-------------|----------|
-| `uncommitted` | `git diff HEAD` plus `git diff --cached` | Reviewing pre-commit work; reviewing the working tree before Stage 1 |
-| `branch` | `git diff <base>...HEAD` where `<base>` is `main` or `master` | Reviewing a feature branch before opening a PR (Stage 2 not yet done) |
-| `pr` | `gh pr diff <pr-number>` | Reviewing an open PR (Stage 2 done) |
+| Scope | Diff source |
+|-------|-------------|
+| `uncommitted` | `git diff HEAD` plus `git diff --cached` |
+| `branch` | `git diff <base>...HEAD` (`<base>` = `main` or `master`) |
+| `pr` | `gh pr diff <pr-number>` |
 
-**Auto-detect scope** when none is specified:
-- In the full pipeline, scope follows whichever stage you arrived at (uncommitted at Stage 1 entry, branch at Stage 2 entry, PR at Stage 3 entry).
-- Standalone (`/vc-khemoo review`), pick the most specific scope present: open PR > branch ahead of base > uncommitted changes. If none exist, report "nothing to review" and stop.
+**Auto-detect:** in the full pipeline, scope follows the entry stage. Standalone `/vc-khemoo review` picks the most specific present (PR > branch > uncommitted), or stops if none.
 
-**What "fix" means per scope** (when issues are found):
-- `uncommitted`: report findings; the user (or Stage 1 on the next pass) folds fixes into the working tree before committing.
-- `branch`: fixes become new micro-unit commits on the branch (Stage 1 rules apply); the next pipeline run picks up at Stage 2.
-- `pr`: fixes become new micro-unit commits pushed to the PR branch; re-run Stage 3 on the new diff (this is the existing Stage 4 loop).
-
-The reviewer dispatch below is identical regardless of scope — only the diff input changes.
+**Fix per scope:** `uncommitted` → fold into working tree; `branch` → new micro-unit commits; `pr` → new commits pushed to PR branch + re-run Stage 3 (the Stage 4 loop).
 
 **Reviewer roster** (cores always dispatched; specialists when their trigger matches):
 
@@ -137,27 +122,13 @@ The reviewer dispatch below is identical regardless of scope — only the diff i
 
 ## Stage 4: Resolve & Merge
 
-1. Collect all review findings from Stage 3 **and** any pre-existing PR comments. Fetch existing GitHub comments with `gh pr view <pr> --json comments,reviews` and parse them as additional findings.
-
-2. **Triage each finding** as fix-now or defer-to-issue:
-   - **Fix now (mandatory):** every `critical` issue, every `REQUEST_CHANGES` verdict, every finding inside this PR's stated scope.
-   - **Defer to issue:** out-of-scope findings, architectural concerns that need separate design, cross-cutting refactors that would balloon this PR. Major/minor only — never defer `critical` or `REQUEST_CHANGES`.
-
-3. **For each fix-now finding:**
-   - Fix as a new micro-unit commit (Stage 1 rules apply)
-   - Push fixes to the PR branch
-   - Record the (finding, fix-commit-sha) pair for the resolution comment
-
-4. **For each defer-to-issue finding:**
-   - Create a GitHub issue using `references/deferred-issue-template.md`
-   - Record the (finding, issue-number) pair
-   - If the finding came from a human PR comment, reply on the PR explaining the deferral and linking the issue
-
-5. If any fixes were pushed, re-run Stage 3 on the new diff and loop back to step 1.
-
-6. Once all findings are either fixed or deferred, post a single resolution comment on the PR using `references/resolved-findings-comment.md`. List every fixed finding with its fix-commit SHA and every deferred finding with its issue number. Every human PR comment must be replied to (either "fixed in `<sha>`" or "deferred to #`<issue>`").
-
-7. Merge the PR. **Use merge commit (preserves micro-unit history) unless the user explicitly says "squash" for this PR.** "Squash by default" or "team prefers squash" do not count as explicit unless re-stated for this PR.
+1. **Collect findings** — Stage 3 reports plus pre-existing PR comments via `gh pr view <pr> --json comments,reviews`.
+2. **Triage** each finding:
+   - **Fix now (mandatory):** every `critical` / `REQUEST_CHANGES` / in-scope finding. Each fix is a new micro-unit commit (Stage 1 rules) pushed to the PR branch. Record `(finding, fix-commit-sha)`.
+   - **Defer to issue:** out-of-scope, architectural, or cross-cutting only — never `critical` or `REQUEST_CHANGES`. Use `references/deferred-issue-template.md`. Record `(finding, issue-number)`. If from a human comment, reply on the PR linking the issue.
+3. **Loop** — push fixes, re-run Stage 3, repeat until all findings are resolved or deferred.
+4. **Publish summary** — single PR comment via `references/resolved-findings-comment.md` listing every fix-commit SHA and every deferred issue number. Reply to every human comment with `fixed in <sha>` or `deferred to #<issue>`.
+5. **Merge** — `gh pr merge <pr-number> --merge --delete-branch`. Use `--squash` only if the user explicitly says "squash" for this PR.
 
 ```bash
 gh pr merge <pr-number> --merge --delete-branch
