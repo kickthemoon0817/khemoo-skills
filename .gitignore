@@ -3,5 +3,6 @@
 *.swo
 .omc
 .omx
+.claude/
 *-workspace/
 skills/*/evals/
