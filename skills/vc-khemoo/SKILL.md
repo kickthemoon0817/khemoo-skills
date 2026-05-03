@@ -69,7 +69,7 @@ Before running, detect the current state and start at the **first** stage below 
 4. Generate PR body from micro-commit messages
 5. Create PR
 
-**PR title and body template** — see `references/pr-body-template.md`. The Release-Note line is consumed by Stage 5 for patch-vs-minor. Fill from micro-commit messages and report the PR URL.
+**PR title and body template** — load `references/pr-body-template.md` (always required at Stage 2). Title `<Type>: <Subject>`. Body has Summary, Changes, How to Test, **Release-Note** (consumed by Stage 5 for patch-vs-minor), Checklist. Fill from micro-commit messages and report the PR URL.
 
 ## Stage 3: Multi-Role Review
 
@@ -123,7 +123,13 @@ Dispatch parallel review subagents. **No "too small to review" exemption** — d
 
 ## Stage 5: Version & Release
 
-Versions follow strict semver `vMAJOR.MINOR.PATCH`. **Default:** major/minor → tag + GitHub Release; patch → tag only. **Default bump is patch — patches need no confirmation, do NOT load `bump-decision.md`.** Load `references/bump-decision.md` *only* when considering a minor or major bump.
+Versions follow strict semver `vMAJOR.MINOR.PATCH`. **Default:** major/minor → tag + GitHub Release; patch → tag only.
+
+**Bump rule (inline — covers >95% of cases, no reference load needed):**
+
+- **Major** if any commit since the last tag has `BREAKING CHANGE:` footer, `!` after the type, or the literal word "breaking" in the message. **Stop and ask the user** to confirm before tagging.
+- **Patch** for everything else, including: fixes, docs, refactors, chores, tests, dep bumps, internal helpers, **small features (new flag, new minor option, single-line additive change)**, sophistication / hardening / refinement of an existing feature even if behavior changes. Patches need no confirmation.
+- **Minor** ONLY if the change is a *substantial* new top-level capability — new top-level command, new full subsystem, new public skill — AND the PR body has a `Release-Note` line that would be a release-page headline an end user would care about. **Stop and ask the user** to confirm before bumping minor. Load `references/bump-decision.md` here for the full anti-rationalization checklist; otherwise do NOT load it.
 
 **Last tag and commits since:**
 ```bash
