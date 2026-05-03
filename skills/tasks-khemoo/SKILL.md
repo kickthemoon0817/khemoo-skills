@@ -42,6 +42,19 @@ If `bash` / `awk` are unavailable in the environment, fall back to performing th
 
 The skill only touches the section of `TODO.md` between these HTML-comment markers. Everything outside the markers (including rich hand-curated h2-per-task planning sections) is preserved untouched.
 
+**Initial structure** (what to write when the section needs to be created from scratch — no example bullets):
+
+```markdown
+<!-- tasks-khemoo:start -->
+## Quick tasks
+
+_Auto-managed by the `tasks-khemoo` skill. Hand-curated content lives above this section; everything between the markers is touched by the skill._
+
+<!-- tasks-khemoo:end -->
+```
+
+**Populated example** (what the section may look like after a few `add` / `done` operations — for illustration only, do not insert these literal lines):
+
 ```markdown
 <!-- tasks-khemoo:start -->
 ## Quick tasks
@@ -55,9 +68,9 @@ _Auto-managed by the `tasks-khemoo` skill. Hand-curated content lives above this
 
 **What's mutable inside the markers:** only the `- [ ]` / `- [x]` bullet lines. The `## Quick tasks` heading and the italic auto-managed paragraph are part of the bondable structure — preserve them on every write.
 
-If the markers are missing, append the full section template above at the end of `TODO.md` (preserving everything above).
+If the markers are missing, append the **initial structure** above (no example bullets) at the end of `TODO.md`, preserving everything above.
 
-If `TODO.md` does not exist at the project root, create it containing only the bondable section.
+If `TODO.md` does not exist at the project root, create it containing only the **initial structure**.
 
 ## Dates
 
