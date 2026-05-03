@@ -12,16 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Shellcheck all skills/*/scripts/*.sh
+      - name: Shellcheck all skills/*/scripts/*.sh (pinned via Docker)
         run: |
           set -euo pipefail
-          # ubuntu-latest ships shellcheck pre-installed
           mapfile -t scripts < <(find skills -type f -path '*/scripts/*.sh' | sort)
           if [ "${#scripts[@]}" -eq 0 ]; then
             echo "No shell scripts under skills/*/scripts/ — skipping."
             exit 0
           fi
-          shellcheck "${scripts[@]}"
+          # Pinned shellcheck version — `koalaman/shellcheck:stable` would drift over time.
+          docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 "${scripts[@]}"
 
       - name: Discover and run all skills/*/scripts/test-*.sh
         run: |
