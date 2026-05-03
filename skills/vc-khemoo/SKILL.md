@@ -91,19 +91,19 @@ Dispatch parallel review subagents. **No "too small to review" exemption** — d
 
 | Reviewer | Agent | Model | Trigger / Focus | Brief |
 |----------|-------|-------|-----------------|-------|
-| Code | `code-reviewer` | opus | always · logic, architecture, contracts | `cores.md` |
-| Security | `security-reviewer` | sonnet | always · OWASP, injection, auth, BOLA | `cores.md` |
-| Quality | `quality-reviewer` | sonnet | always · naming, patterns, anti-patterns | `cores.md` |
-| Performance | `quality-reviewer` | opus | always · complexity, memory, latency | `cores.md` |
-| Test Engineer | `test-engineer` | sonnet | always · coverage, edge cases | `cores.md` |
-| UI/UX | `designer` | sonnet | `**/*.{tsx,jsx,vue,svelte}`, components | `specialists/ui-ux.md` |
-| Design | `designer` | sonnet | `**/*.{css,scss,sass,less}`, styles, design tokens | `specialists/design.md` |
-| DevOps | `build-fixer` | sonnet | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` | `specialists/devops.md` |
-| Documentation | `writer` | sonnet | `**/*.md`, `docs/**`, public-API surface | `specialists/documentation.md` |
-| Observability | `code-reviewer` | sonnet | log / metric / trace SDK calls, observability libs | `specialists/observability.md` |
-| API/Contract | `code-reviewer` | opus | `**/api/**`, OpenAPI / GraphQL / proto, exported public types, **new endpoint accepting user-controlled identifiers** | `specialists/api-contract.md` |
-| Systems Performance | `code-reviewer` | opus | native code, locks, atomics, hot paths, `bench/**` | `specialists/systems-performance.md` |
-| Security Deep | `security-reviewer` | opus | crypto, auth flows, supply-chain, sandboxing, **new endpoint accepting user-controlled identifiers (BOLA surface)** | `specialists/security-deep.md` |
+| Code | `code-reviewer` | opus | always · logic, architecture, contracts | `references/cores.md` |
+| Security | `security-reviewer` | sonnet | always · OWASP, injection, auth, BOLA | `references/cores.md` |
+| Quality | `quality-reviewer` | sonnet | always · naming, patterns, anti-patterns | `references/cores.md` |
+| Performance | `quality-reviewer` | opus | always · complexity, memory, latency | `references/cores.md` |
+| Test Engineer | `test-engineer` | sonnet | always · coverage, edge cases | `references/cores.md` |
+| UI/UX | `designer` | sonnet | `**/*.{tsx,jsx,vue,svelte}`, components | `references/specialists/ui-ux.md` |
+| Design | `designer` | sonnet | `**/*.{css,scss,sass,less}`, styles, design tokens | `references/specialists/design.md` |
+| DevOps | `build-fixer` | sonnet | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` | `references/specialists/devops.md` |
+| Documentation | `writer` | sonnet | `**/*.md`, `docs/**`, public-API surface | `references/specialists/documentation.md` |
+| Observability | `code-reviewer` | sonnet | log / metric / trace SDK calls, observability libs | `references/specialists/observability.md` |
+| API/Contract | `code-reviewer` | opus | `**/api/**`, OpenAPI / GraphQL / proto, exported public types, **new endpoint accepting user-controlled identifiers** | `references/specialists/api-contract.md` |
+| Systems Performance | `code-reviewer` | opus | native code, locks, atomics, hot paths, `bench/**` | `references/specialists/systems-performance.md` |
+| Security Deep | `security-reviewer` | opus | crypto, auth flows, supply-chain, sandboxing, **new endpoint accepting user-controlled identifiers (BOLA surface)** | `references/specialists/security-deep.md` |
 
 `quality-reviewer` is dispatched twice intentionally (sonnet for Quality, opus for Performance). When a system specialist dispatches, the matching core reviewer still runs — specialist adds depth, not replacement.
 
