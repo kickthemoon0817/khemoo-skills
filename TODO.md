@@ -7,41 +7,7 @@ Open work items for the `khemoo-skills` repo. Each task captures the user's orig
 ## 1. Build `tasks-khemoo` skill — Claude Code task management discipline ✅
 
 **Status:** completed (shipped in v0.1.25, 2026-05-04)
-**Captured:** 2026-05-02
-**Outcome:** `skills/tasks-khemoo/SKILL.md` ships queue-only `add` (does not implement), bondable `TODO.md` integration via `<!-- tasks-khemoo:start/end -->` markers, normalized merge that absorbs `[-_/.]` cosmetic drift, sub-commands `add` / `list` / `done` / `remove` / `cleanup` / `sync`. Validated through 3 iterations of test scenarios.
-
-### Original user framing (verbatim)
-
-> About skills, I want to add tasks-khemoo, which add the task at the claude code. The task is managed in the claude natively, but the task could not be managed, added, or deleted well. So, I want to add the skills, which could just add without right now implementing it and removing it and also remove the completed tasks and so on
-
-### Why this matters
-
-Claude Code has native task tooling (`TaskCreate` / `TaskUpdate` / `TaskList`), but in practice agents tend to:
-
-- **Start implementing immediately** when the user mentions a task, instead of just queuing it.
-- **Leave completed tasks lingering** in the list, cluttering future context.
-- **Never explicitly delete** a pending task even when the user changes direction.
-
-A skill enforces the discipline so the agent treats "add a task" as queue-only and keeps the list clean.
-
-### Required behaviors
-
-1. **Add without implementing** — `/tasks-khemoo add <description>` queues a task as pending and **does not** trigger any implementation work or file changes.
-2. **Remove tasks** — explicit deletion of a task in any state (pending, in-progress, completed) without requiring it to be "completed" first.
-3. **Cleanup completed** — `/tasks-khemoo cleanup` clears all completed tasks from the list.
-4. **List view** — `/tasks-khemoo list` shows the current task list (pending + in-progress + recently completed if any survived cleanup).
-5. **Possibly: persistence across sessions** — open question; default is in-session only (matches `TaskCreate` semantics).
-
-### Open design questions to resolve before implementing
-
-1. **Wrapper vs. persistent layer.** Pure wrapper around `TaskCreate` / `TaskUpdate` / `TaskList` (in-session only)? Or also a persistent layer at `.omc/tasks.md` or similar so tasks carry across sessions?
-2. **Sub-command set.** Confirmed: `add`, `remove`, `cleanup`, `list`. Optional: `done` (mark completed), `start` (mark in-progress).
-3. **Trigger conditions.** When should the skill auto-engage vs. require explicit invocation? Candidates: when the user says "add a task to ...", "remember to ...", "queue this for later"; when the agent itself notices an out-of-scope follow-up.
-4. **Interaction with TaskCreate's auto-implement default.** Native `TaskCreate` doesn't auto-implement — the issue is that conversational flow tends to make Claude start work. The skill needs to enforce a hard "queue only, do not act on it" rule even when the user's phrasing is ambiguous.
-
-### Suggested kickoff
-
-A brainstorm pass via `superpowers:brainstorming` was started in the 2026-05-02 session but cancelled when the user pivoted to vc-khemoo. Pick up the same brainstorm flow, resolving the four open questions above, then draft the skill following the same lightweight pattern as vc-khemoo (target: <100 lines for the SKILL.md, since the discipline is much simpler than vc-khemoo's pipeline).
+**Outcome:** `skills/tasks-khemoo/SKILL.md` + `scripts/{todo-md.sh,test-todo-md.sh,test-markers.sh}`. Queue-only `add`, bondable `TODO.md` via `<!-- tasks-khemoo:start/end -->` markers, normalized merge absorbing `[-_/.]` cosmetic drift. Sub-commands: `add` / `list` / `done` / `remove` / `cleanup` / `sync`. Validated through 5 eval iterations + 13 regression scenarios. See CHANGELOG entries v0.1.25 onward for the full evolution.
 
 ---
 
