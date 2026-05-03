@@ -1,6 +1,7 @@
 # khemoo-skills
 
 [![test](https://github.com/kickthemoon0817/khemoo-skills/actions/workflows/test.yml/badge.svg)](https://github.com/kickthemoon0817/khemoo-skills/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 Claude Code plugin with focused workflow skills for version control and task management.
 
