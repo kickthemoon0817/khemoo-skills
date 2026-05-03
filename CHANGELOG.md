@@ -2,6 +2,11 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.37] — 2026-05-04
+
+- ci: extended `.github/workflows/test.yml` with a shellcheck step that runs against every `skills/*/scripts/*.sh`. Hardened both CI loops to use `mapfile`/quoted arrays so paths with spaces won't break the discovery.
+- tasks-khemoo: fixed two real shellcheck warnings in the test script (SC2164 `cd "$WORK"` without `|| exit`, SC1010 `"$HELPER" done` parsed as the `done` keyword); refactored the `ensure_section` helper to avoid SC2094's same-file read+write-in-one-pipeline pattern; added a top-level SC2016 suppression (false positive — awk programs are correctly single-quoted while variables flow through `awk -v`). Both scripts now pass shellcheck-stable cleanly via Docker.
+
 ## [0.1.36] — 2026-05-04
 
 - tasks-khemoo: `todo-md.sh` now fails loudly (exit 2, stderr message) when `TODO.md` has a half-broken bondable section (only one of the two markers present). Previously this case was a silent no-op on `add`/`done`/etc., which was a real UX trap. Test suite extended from 9 → 13 cases (added: double-quote round-trip, Unicode round-trip, intra-script dedup behavior, half-broken-section behavior). All passing.
