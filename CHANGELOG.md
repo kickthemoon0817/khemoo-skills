@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.56] — 2026-05-04
+
+- CONTRIBUTING: replaced the one-liner release instruction with a concrete 6-step ceremony (CHANGELOG entry → version bump → 2 separate commits → push HEAD → tag + push tag → GitHub Release for minor/major only). Captures the actual flow we've been following throughout the v0.1.x series so a new contributor doesn't have to derive it from the abstract rules.
+
 ## [0.1.55] — 2026-05-04
 
 - Hardened `.gitignore` with defensive patterns: `.env` / `.env.*` (prevent accidental secret commits), `*.log`, `Thumbs.db` (Windows OS file). The `.env*` entries are the most important — pre-empt the classic foot-gun of committing API keys.
