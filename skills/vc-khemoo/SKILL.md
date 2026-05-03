@@ -116,14 +116,14 @@ Dispatch parallel review subagents. **No "too small to review" exemption** — d
 1. **Collect findings** — Stage 3 reports plus pre-existing PR comments via `gh pr view <pr> --json comments,reviews`.
 2. **Triage** each finding:
    - **Fix now (mandatory):** every `critical` / `REQUEST_CHANGES` / in-scope finding. Each fix is a new micro-unit commit (Stage 1 rules) pushed to the PR branch. Record `(finding, fix-commit-sha)`.
-   - **Defer to issue:** out-of-scope, architectural, or cross-cutting only — never `critical` or `REQUEST_CHANGES`. Use `references/deferred-issue-template.md`. Record `(finding, issue-number)`. If from a human comment, reply on the PR linking the issue.
+   - **Defer to issue:** out-of-scope, architectural, or cross-cutting only — never `critical` or `REQUEST_CHANGES`. Load `references/deferred-issue-template.md` *only when actually deferring*. Record `(finding, issue-number)`. If from a human comment, reply on the PR linking the issue.
 3. **Loop** — push fixes, re-run Stage 3, repeat until all findings are resolved or deferred.
-4. **Publish summary** — single PR comment via `references/resolved-findings-comment.md` listing every fix-commit SHA and every deferred issue number. Reply to every human comment with `fixed in <sha>` or `deferred to #<issue>`.
+4. **Publish summary** *(only if there are findings to summarize)* — single PR comment via `references/resolved-findings-comment.md`. Reply to every human comment with `fixed in <sha>` or `deferred to #<issue>`. Skip both this step and loading the template if zero findings.
 5. **Merge** — `gh pr merge <pr-number> --merge --delete-branch`. Use `--squash` only if the user explicitly says "squash" for this PR.
 
 ## Stage 5: Version & Release
 
-Versions follow strict semver `vMAJOR.MINOR.PATCH`. **Default:** major/minor → tag + GitHub Release; patch → tag only. Default bump is patch; for minor/major decisions and the confirmation gate, see `references/bump-decision.md`. Patches need no confirmation.
+Versions follow strict semver `vMAJOR.MINOR.PATCH`. **Default:** major/minor → tag + GitHub Release; patch → tag only. **Default bump is patch — patches need no confirmation, do NOT load `bump-decision.md`.** Load `references/bump-decision.md` *only* when considering a minor or major bump.
 
 **Last tag and commits since:**
 ```bash
