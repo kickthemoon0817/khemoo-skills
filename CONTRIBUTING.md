@@ -50,9 +50,31 @@ Pre-1.0, the bar for minor is **higher**, not lower. Almost all changes are patc
 - **Minor**: substantial new top-level capability (new top-level command, new full subsystem, new public skill) AND the PR's `Release-Note` would be a release-page headline an end user cares about.
 - **Patch**: everything else.
 
-Run `chore: bump to v<x.y.z>` in its own commit, push it before the tag (`git push origin HEAD`), then `git tag -a v<x.y.z>` and `git push origin v<x.y.z>`.
+### Release ceremony
 
-GitHub Releases for major/minor only; patches are tag-only.
+For every release (patch through major), in order:
+
+1. Add an entry at the top of `CHANGELOG.md` under a new `## [<x.y.z>] — YYYY-MM-DD` heading describing what's in the release.
+2. Bump the `version` field in `.claude-plugin/plugin.json` to `<x.y.z>`.
+3. Commit the CHANGELOG and the bump as **separate** commits:
+   ```bash
+   git add CHANGELOG.md
+   git commit -m "docs: add v<x.y.z> entry to CHANGELOG"
+   git add .claude-plugin/plugin.json
+   git commit -m "chore: bump to v<x.y.z>"
+   ```
+4. Push the bump commit *before* tagging so the tag references a SHA the remote has:
+   ```bash
+   git push origin HEAD
+   ```
+5. Tag and push the tag:
+   ```bash
+   git tag -a v<x.y.z> -m "v<x.y.z>: <one-line summary>"
+   git push origin v<x.y.z>
+   ```
+6. **Major / minor only:** create a GitHub Release using `gh release create v<x.y.z> --title "v<x.y.z>" --notes "<changelog body>"`. Patches are tag-only.
+
+If `gh release create` is invoked for a patch by mistake, delete the Release (the tag stays). Patches don't get Release pages by default — that's a deliberate noise-reduction choice (see `skills/vc-khemoo/references/bump-decision.md`).
 
 ## Testing
 
