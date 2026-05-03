@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.53] — 2026-05-04
+
+- Added markdownlint to both `bin/test` and CI (pinned `davidanson/markdownlint-cli2:v0.13.0` via Docker). Added `.markdownlintignore`-equivalent CLI excludes for `vc-khemoo-workspace/` and `node_modules`. Tightened `.markdownlint.json` to disable the rules our intentional compact style breaks (MD031, MD032, MD038, MD040, MD049). 22 .md files lint-clean.
+
 ## [0.1.52] — 2026-05-04
 
 - Added `.markdownlint.json` codifying the project's intentional deviations from defaults: `MD024 siblings_only: true` (duplicate h3s under different h2s are fine — used in TODO.md task entries), `MD060: false` (GFM table style with spaces around pipes, not compact), plus disabling `MD013` (line length), `MD033` (inline HTML — used for the bondable section markers), and `MD041` (first-line-h1 not always wanted). Stops the IDE from flagging the non-issues we hit through the session.
