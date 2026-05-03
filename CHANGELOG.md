@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.30] — 2026-05-04
+
+- tasks-khemoo: `cleanup` now explicitly names `TaskUpdate(status="deleted")` (was vague "Remove each from in-session"), matching the `remove` rule. Added a "Display IDs vs in-session task IDs" clarification to `list` so `done`/`remove` know to map the user-visible display number back to the underlying in-session task ID.
+
 ## [0.1.29] — 2026-05-04
 
 - vc-khemoo: prefix all reviewer-roster `Brief` cells with the full `references/` path so SKILL.md is internally consistent with the prose convention used elsewhere (was: bare `cores.md` / `specialists/X.md` resolving relative to an implicit directory).
