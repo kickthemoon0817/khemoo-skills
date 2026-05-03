@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.34] — 2026-05-04
+
+- ci: added `.github/workflows/test.yml` that discovers and runs every `skills/*/scripts/test-*.sh` on push to main and on every PR. Catches regressions in the script-backed skills (currently `tasks-khemoo`'s `todo-md.sh`); future skills with similar layout get picked up automatically.
+
 ## [0.1.33] — 2026-05-04
 
 - tasks-khemoo: added `scripts/test-todo-md.sh` — regression test suite for `todo-md.sh` covering 9 scenarios (add to non-existent file, append, done flip+stamp, done idempotence, cleanup, list, remove, ensure_section preserves hand-curated content, cleanup-on-empty no-op). All passing. Future sessions can `./scripts/test-todo-md.sh` to verify the helper still behaves correctly after edits.
