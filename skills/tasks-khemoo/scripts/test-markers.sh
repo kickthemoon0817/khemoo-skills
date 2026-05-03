@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# Regression test for tasks-khemoo: the bondable-section markers must be
-# byte-identical across SKILL.md, todo-md.sh, and the project-root TODO.md.
-# Catches drift from typos, partial renames, or accidental TODO.md edits.
+# Regression test for tasks-khemoo bondable-section integrity:
+#   1. Markers (`<!-- tasks-khemoo:start/end -->`) byte-identical across
+#      SKILL.md, todo-md.sh, and the project-root TODO.md.
+#   2. Auto-managed paragraph (the italic `_Auto-managed by the ..._` line)
+#      byte-identical between todo-md.sh's section_template and TODO.md.
+# Catches drift from typos, partial renames, or accidental edits.
 
 set -uo pipefail
 
@@ -45,8 +48,21 @@ else
   echo "INFO: $TODO_MD not present — skipping TODO.md marker check (will be created on first add)."
 fi
 
+EXPECTED_PARAGRAPH="_Auto-managed by the \`tasks-khemoo\` skill. Hand-curated content lives above this section; everything between the markers is touched by the skill._"
+
+# todo-md.sh stores this paragraph in a heredoc with escaped backticks.
+# Use grep -F so backticks are matched literally, not as regex.
+if ! grep -qF "$EXPECTED_PARAGRAPH" "$HELPER"; then
+  echo "FAIL: todo-md.sh section_template paragraph differs from expected." >&2
+  fail=$((fail + 1))
+fi
+if [ -f "$TODO_MD" ] && ! grep -qF "$EXPECTED_PARAGRAPH" "$TODO_MD"; then
+  echo "FAIL: TODO.md bondable-section paragraph differs from expected." >&2
+  fail=$((fail + 1))
+fi
+
 if [ $fail -eq 0 ]; then
-  echo "PASS: bondable-section markers byte-identical across SKILL.md, todo-md.sh$([ -f "$TODO_MD" ] && echo ", TODO.md")."
+  echo "PASS: bondable-section markers + auto-managed paragraph byte-identical across SKILL.md, todo-md.sh$([ -f "$TODO_MD" ] && echo ", TODO.md")."
 fi
 
 exit $fail

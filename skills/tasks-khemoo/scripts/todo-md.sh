@@ -28,13 +28,16 @@ START_MARKER="<!-- tasks-khemoo:start -->"
 END_MARKER="<!-- tasks-khemoo:end -->"
 
 section_template() {
-  cat <<EOF
-$START_MARKER
+  # Single-quoted heredoc → no expansion, no need to escape backticks.
+  # The markers are constants; if they ever change, also update START_MARKER
+  # and END_MARKER above and the test in scripts/test-markers.sh.
+  cat <<'EOF'
+<!-- tasks-khemoo:start -->
 ## Quick tasks
 
-_Auto-managed by the \`tasks-khemoo\` skill. Hand-curated content lives above this section; everything between the markers is touched by the skill._
+_Auto-managed by the `tasks-khemoo` skill. Hand-curated content lives above this section; everything between the markers is touched by the skill._
 
-$END_MARKER
+<!-- tasks-khemoo:end -->
 EOF
 }
 
