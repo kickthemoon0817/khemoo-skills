@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.27] — 2026-05-04
+
+- Added `CHANGELOG.md` with release history from `v0.1.0` through the current tag.
+
 ## [0.1.26] — 2026-05-04
 
 - Tasks-khemoo: tightened `add` (duplicate-check + return task ID), `done` (explicit before/after example), `remove` (concrete `TaskUpdate(status="deleted")`), `sync` (structured Pulled/Pushed/Cosmetic-drift report).
