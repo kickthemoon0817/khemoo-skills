@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Local test runner — mirrors what CI does (.github/workflows/test.yml):
+#   1. shellcheck every skills/*/scripts/*.sh
+#   2. run every executable skills/*/scripts/test-*.sh
+#
+# Run from anywhere: ./bin/test
+#
+# Requires Docker for the pinned shellcheck. Pass --no-lint to skip if Docker
+# isn't available locally (CI still runs the lint).
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
+skip_lint=0
+for arg in "$@"; do
+  case "$arg" in
+    --no-lint) skip_lint=1 ;;
+    -h|--help)
+      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+  esac
+done
+
+scripts=()
+while IFS= read -r f; do
+  scripts+=("$f")
+done < <(find skills -type f -path '*/scripts/*.sh' | sort)
+
+tests=()
+while IFS= read -r f; do
+  tests+=("$f")
+done < <(find skills -type f -path '*/scripts/test-*.sh' -perm -u+x | sort)
+
+if [ "$skip_lint" -eq 0 ] && [ "${#scripts[@]}" -gt 0 ]; then
+  echo "=== shellcheck (${#scripts[@]} scripts, pinned koalaman/shellcheck:v0.10.0) ==="
+  docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 "${scripts[@]}"
+  echo "shellcheck OK"
+  echo
+fi
+
+if [ "${#tests[@]}" -eq 0 ]; then
+  echo "No test scripts found under skills/*/scripts/test-*.sh"
+  exit 0
+fi
+
+echo "=== regression tests (${#tests[@]} suites) ==="
+fail=0
+for t in "${tests[@]}"; do
+  echo "--- $t ---"
+  if "$t"; then
+    echo "OK"
+  else
+    echo "FAILED"
+    fail=$((fail + 1))
+  fi
+  echo
+done
+
+if [ "$fail" -gt 0 ]; then
+  echo "Test suites failed: $fail / ${#tests[@]}"
+  exit 1
+fi
+echo "All ${#tests[@]} test suites passed."
