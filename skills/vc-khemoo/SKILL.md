@@ -24,16 +24,7 @@ Before running, detect the current state and start at the **first** stage below 
 | PR review issues all resolved, not merged | Stage 4: Merge |
 | Merged commits since last semver tag | Stage 5: Release |
 
-**Working on the default branch:** If `HEAD` is on `main`/`master` with uncommitted changes, **default to creating a new feature branch automatically** and proceed. Derive the branch name from the dominant change type:
-
-- `feat/<short-slug>` for new features
-- `fix/<short-slug>` for bug fixes
-- `docs/<short-slug>` for docs-only changes
-- `refactor/<short-slug>`, `chore/<short-slug>`, `test/<short-slug>`, etc. for the matching Conventional Commits type
-
-The slug is a 2–4 word summary of the change (e.g. `fix/empty-diff-handling`, `docs/vc-khemoo-bump-rules`). Run `git switch -c <branch>`, announce the branch name, then continue with Stage 1.
-
-Only stop and ask if (a) the user has explicitly said to commit on the default branch for this session, or (b) branch creation fails (e.g., repo policy or permissions). Never silently commit to the default branch.
+**Working on the default branch:** if `HEAD` is on `main`/`master` with uncommitted changes, **auto-create a feature branch** named `<type>/<slug>` from the dominant change type (`feat`, `fix`, `docs`, `refactor`, `chore`, `test`, etc.) where `<slug>` is a 2–4 word summary (e.g. `fix/empty-diff-handling`). Run `git switch -c <branch>`, announce, continue. Stop and ask only if (a) the user said to commit on the default branch this session, or (b) branch creation fails. Never silently commit to the default branch.
 
 **Sub-command overrides:**
 - `/vc-khemoo` — full pipeline from detected state
@@ -130,35 +121,21 @@ Dispatch parallel review subagents. **No "too small to review" exemption** — d
 4. **Publish summary** — single PR comment via `references/resolved-findings-comment.md` listing every fix-commit SHA and every deferred issue number. Reply to every human comment with `fixed in <sha>` or `deferred to #<issue>`.
 5. **Merge** — `gh pr merge <pr-number> --merge --delete-branch`. Use `--squash` only if the user explicitly says "squash" for this PR.
 
-```bash
-gh pr merge <pr-number> --merge --delete-branch
-gh pr merge <pr-number> --squash --delete-branch
-```
-
 ## Stage 5: Version & Release
 
-Versions follow strict semver `vMAJOR.MINOR.PATCH` (e.g. `v0.1.1`).
+Versions follow strict semver `vMAJOR.MINOR.PATCH`. **Default:** major/minor → tag + GitHub Release; patch → tag only. Default bump is patch; for minor/major decisions and the confirmation gate, see `references/bump-decision.md`. Patches need no confirmation.
 
-**Default:** major / minor → git tag + GitHub Release. Patch → git tag only.
-
-**Default bump bias is patch.** For minor/major decisions, the bump table, anti-rationalization rules, the confirmation gate, and the explicit-override definition, see `references/bump-decision.md`. Patches do not need confirmation.
-
-**Find the last semver tag and enumerate commits since then:**
+**Last tag and commits since:**
 ```bash
 LAST_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 git log ${LAST_TAG:+${LAST_TAG}..}HEAD --oneline
 ```
 
-**Apply the bump:**
-- Strip the leading `v` from `LAST_TAG` for the numeric version. If empty, start at `0.1.0`.
-- Major: `X.Y.Z` → `X+1.0.0`. Minor: `X.Y.Z` → `X.Y+1.0`. Patch: `X.Y.Z` → `X.Y.Z+1`.
+**Bump:** strip leading `v` from `LAST_TAG` (start at `0.1.0` if empty). Major: `X.Y.Z → X+1.0.0`. Minor: `X.Y.Z → X.Y+1.0`. Patch: `X.Y.Z → X.Y.Z+1`.
 
-**Update version files** (e.g. `.claude-plugin/plugin.json`, `package.json`, `pyproject.toml`, `Cargo.toml`) and commit as `chore: bump to v<version>`. Push the bump commit before tagging so the tag references a SHA the remote has:
-```bash
-git push origin HEAD
-```
+**Version files** (`.claude-plugin/plugin.json`, `package.json`, `pyproject.toml`, `Cargo.toml`, etc.) — bump them, commit `chore: bump to v<version>`, then `git push origin HEAD` BEFORE tagging.
 
-**Run the release commands** — see `references/release-commands.md`. Patch is tag-only; major / minor adds the GitHub Release. Do **not** call `gh release create` for a patch unless the user explicitly asked.
+**Release commands:** see `references/release-commands.md`. Do **not** `gh release create` for a patch unless the user explicitly asked.
 
 ## Red Flags
 
