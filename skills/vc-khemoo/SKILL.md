@@ -115,11 +115,11 @@ The reviewer dispatch below is identical regardless of scope — only the diff i
 
 | Reviewer | Agent | Model | Trigger / Focus | Brief |
 |----------|-------|-------|-----------------|-------|
-| Code | `code-reviewer` | opus | always · logic, architecture, contracts | `cores/code-reviewer.md` |
-| Security | `security-reviewer` | sonnet | always · OWASP, injection, auth, BOLA | `cores/security-reviewer.md` |
-| Quality | `quality-reviewer` | sonnet | always · naming, patterns, anti-patterns | `cores/quality-reviewer.md` |
-| Performance | `quality-reviewer` | opus | always · complexity, memory, latency | `cores/performance-reviewer.md` |
-| Test Engineer | `test-engineer` | sonnet | always · coverage, edge cases | `cores/test-engineer.md` |
+| Code | `code-reviewer` | opus | always · logic, architecture, contracts | `cores.md` |
+| Security | `security-reviewer` | sonnet | always · OWASP, injection, auth, BOLA | `cores.md` |
+| Quality | `quality-reviewer` | sonnet | always · naming, patterns, anti-patterns | `cores.md` |
+| Performance | `quality-reviewer` | opus | always · complexity, memory, latency | `cores.md` |
+| Test Engineer | `test-engineer` | sonnet | always · coverage, edge cases | `cores.md` |
 | UI/UX | `designer` | sonnet | `**/*.{tsx,jsx,vue,svelte}`, components | `specialists/ui-ux.md` |
 | Design | `designer` | sonnet | `**/*.{css,scss,sass,less}`, styles, design tokens | `specialists/design.md` |
 | DevOps | `build-fixer` | sonnet | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` | `specialists/devops.md` |
