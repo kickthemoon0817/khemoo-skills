@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.39] — 2026-05-04
+
+- Added `CONTRIBUTING.md` distilling the conventions baked into vc-khemoo + tasks-khemoo for human contributors who don't have the skills loaded — Conventional Commits with no parenthesized scope, branch-naming rule, PR template + 5-core-reviewers expectation, semver patch bias with explicit minor criteria, local lint/test commands, and how to use `TODO.md`'s bondable section.
+
 ## [0.1.38] — 2026-05-04
 
 - Added `LICENSE` file. README has been claiming MIT since v0.1.0 (and `plugin.json` declares it), but the actual LICENSE file was missing — added the standard MIT text with copyright holder "khemoo".
