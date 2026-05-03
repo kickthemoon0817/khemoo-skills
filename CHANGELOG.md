@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.43] — 2026-05-04
+
+- CONTRIBUTING: aligned the recommended local shellcheck command with CI by using the same Docker-pinned `koalaman/shellcheck:v0.10.0`. Prevents the "passes locally, fails CI" surprise (or vice versa) that comes from running mismatched shellcheck versions. Documented the bare-`shellcheck` command as a fallback when Docker isn't available.
+
 ## [0.1.42] — 2026-05-04
 
 - README: added a pre-1.0 status callout near the top so visitors know the surface may still shift.
