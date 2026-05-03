@@ -62,7 +62,9 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 1. `TaskList` for the in-session set.
 2. Parse the bondable section of `TODO.md` for the persistent set.
 3. **Merge** by normalized description: lowercase + replace each `-`, `_`, `/`, `.` with a single space + collapse runs of whitespace + trim + strip the `(added …)` / `, done …` parentheticals. Tasks whose normalized form matches in both sets are shown once. Tasks only in `TODO.md` are tagged `(TODO.md only)`. Tasks only in-session are tagged `(in-session only)`. If the normalized descriptions match but the raw text differs (cosmetic drift), prefer the `TODO.md` text and note the divergence in the report. For descriptions that almost match but not under this rule (e.g., one has an extra word), do not auto-merge — keep both and flag the near-duplicate so the user can resolve it.
-4. Display grouped by status: `pending` → `in_progress` → `completed`. Number rows for use as `<id>` in subsequent commands.
+4. Display grouped by status: `pending` → `in_progress` → `completed`. Number rows sequentially as **display IDs** for use as `<id>` in subsequent `done` / `remove` commands.
+
+**Display IDs vs in-session task IDs.** The numbers shown in `list` are 1-based display IDs that the user types in follow-up commands. Internally, maintain a map `display_id → (in_session_task_id, todo_md_line_or_null)` from the most recent `list` so `done <display_id>` and `remove <display_id>` can call `TaskUpdate(taskId=<in_session_task_id>, ...)` and edit the correct line in `TODO.md`. If the user runs `done`/`remove` without a prior `list` in this conversation, run `list` first to build the map.
 
 ### `done <id>`
 
@@ -92,7 +94,7 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 ### `cleanup`
 
 1. `TaskList` to find every completed in-session task.
-2. Remove each from in-session.
+2. For each completed task, call `TaskUpdate(taskId=<task-id>, status="deleted")` to drop it.
 3. Strip every `- [x] ` line from the bondable section of `TODO.md`.
 4. Report: `Cleaned up N completed tasks.`
 
