@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.36] — 2026-05-04
+
+- tasks-khemoo: `todo-md.sh` now fails loudly (exit 2, stderr message) when `TODO.md` has a half-broken bondable section (only one of the two markers present). Previously this case was a silent no-op on `add`/`done`/etc., which was a real UX trap. Test suite extended from 9 → 13 cases (added: double-quote round-trip, Unicode round-trip, intra-script dedup behavior, half-broken-section behavior). All passing.
+
 ## [0.1.35] — 2026-05-04
 
 - vc-khemoo: Stage 3 now says explicitly that the orchestrator must include the per-reviewer report format from `references/review-output.md` in each reviewer's subagent prompt. Reviewer briefs are scoped to look-for + do-not-flag; without this directive a subagent loading only its own brief wouldn't know what shape to return.
