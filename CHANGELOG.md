@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.31] — 2026-05-04
+
+- tasks-khemoo: idempotence audit fixes — `done` now has an explicit guard against re-completing an already-done task (was silently appending `, done <today>` twice and corrupting the TODO.md line); display-ID map invalidation is named (re-run `list` after any mutating command before the next `done`/`remove`); `add` defaults to "do not add" in non-interactive contexts; `sync` collapses intra-set duplicates instead of mirroring them across stores.
+
 ## [0.1.30] — 2026-05-04
 
 - tasks-khemoo: `cleanup` now explicitly names `TaskUpdate(status="deleted")` (was vague "Remove each from in-session"), matching the `remove` rule. Added a "Display IDs vs in-session task IDs" clarification to `list` so `done`/`remove` know to map the user-visible display number back to the underlying in-session task ID.
