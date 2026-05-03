@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.51] — 2026-05-04
+
+- CONTRIBUTING: hardened the manual lint/test fallback commands to use `mapfile` + quoted arrays (matching CI and `bin/test`). Previous `for t in skills/*/scripts/test-*.sh` would have broken on paths with spaces.
+
 ## [0.1.50] — 2026-05-04
 
 - Added `bin/test` — one-command local runner that mirrors CI: pinned shellcheck via Docker + every `skills/*/scripts/test-*.sh`. Pass `--no-lint` to skip the Docker step. CONTRIBUTING.md now leads with `./bin/test` and lists the manual fallbacks.
