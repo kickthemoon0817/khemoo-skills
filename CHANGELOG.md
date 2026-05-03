@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.45] — 2026-05-04
+
+- Added `.editorconfig` codifying the existing convention (UTF-8, LF, 2-space indent, no trailing whitespace except in markdown). Verified all current source files already comply.
+
 ## [0.1.44] — 2026-05-04
 
 - ci: added `.github/dependabot.yml` to keep GitHub Actions versions current (monthly cadence, max 5 open PRs). The pinned shellcheck Docker image is not tracked — bump that manually when a new shellcheck release matters.
