@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.55] — 2026-05-04
+
+- Hardened `.gitignore` with defensive patterns: `.env` / `.env.*` (prevent accidental secret commits), `*.log`, `Thumbs.db` (Windows OS file). The `.env*` entries are the most important — pre-empt the classic foot-gun of committing API keys.
+
 ## [0.1.54] — 2026-05-04
 
 - Added `.claude/` to `.gitignore` — Claude Code session/settings dir doesn't belong in repo history.
