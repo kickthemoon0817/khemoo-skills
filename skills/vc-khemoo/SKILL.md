@@ -109,7 +109,7 @@ Dispatch parallel review subagents. **No "too small to review" exemption** — d
 
 **Load only the brief files for reviewers you actually dispatch.** Multiple specialists may dispatch on the same diff; deduplication happens at aggregation time.
 
-**Report format and aggregation:** see `references/review-output.md`.
+**Report format and aggregation:** see `references/review-output.md`. **When dispatching a reviewer, include the per-reviewer report format from this file in the subagent's prompt** so the reviewer (which only loads its own brief) knows what shape to return.
 
 ## Stage 4: Resolve & Merge
 
