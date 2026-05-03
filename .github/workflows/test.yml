@@ -1,0 +1,38 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  skill-tests:
+    name: Run skill regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover and run all skills/*/scripts/test-*.sh
+        run: |
+          set -euo pipefail
+          tests=$(find skills -type f -path '*/scripts/test-*.sh' -perm -u+x | sort)
+          if [ -z "$tests" ]; then
+            echo "No test scripts found under skills/*/scripts/test-*.sh — nothing to run."
+            exit 0
+          fi
+          fail=0
+          for t in $tests; do
+            echo "=== $t ==="
+            if "$t"; then
+              echo "OK: $t"
+            else
+              echo "FAIL: $t"
+              fail=$((fail + 1))
+            fi
+          done
+          echo
+          if [ "$fail" -gt 0 ]; then
+            echo "Test scripts failed: $fail"
+            exit 1
+          fi
+          echo "All test scripts passed."
