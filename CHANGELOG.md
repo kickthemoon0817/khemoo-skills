@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.47] — 2026-05-04
+
+- vc-khemoo: added `scripts/test-references.sh` — verifies every `references/...md` mentioned in SKILL.md exists on disk and every reference file on disk is mentioned (catches drift from renames, additions, deletions). Picked up automatically by the existing CI test-discovery glob. shellcheck-clean (uses bash parameter substitution / `read` loop instead of piped `sed` for SC2001).
+
 ## [0.1.46] — 2026-05-04
 
 - tasks-khemoo: split the bondable-section example in SKILL.md into "Initial structure" (no bullets) and "Populated example" (illustrative bullets, marked do-not-copy). Previous wording said "append the full section template above" without distinguishing the two — a literal-minded agent could have inserted the placeholder `- [ ] task description` line on first init. The script (`todo-md.sh`) was already correct; this aligns the spec.
