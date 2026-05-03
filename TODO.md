@@ -107,3 +107,12 @@ Brainstorm via `superpowers:brainstorming` to settle the four open questions, th
 - `skills/setup-khemoo/references/sdk-caching/` — per-SDK setup snippets (Anthropic Python, Anthropic TS, Claude Agent SDK), loaded only by the corresponding bootstrap path.
 
 This skill will benefit from the same lightweight progressive-disclosure pattern that vc-khemoo iterated toward (v0.1.24).
+
+---
+
+<!-- tasks-khemoo:start -->
+## Quick tasks
+
+_Auto-managed by the `tasks-khemoo` skill. Hand-curated content lives above this section; everything between the markers is touched by the skill._
+
+<!-- tasks-khemoo:end -->
