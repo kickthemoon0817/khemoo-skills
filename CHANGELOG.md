@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.35] — 2026-05-04
+
+- vc-khemoo: Stage 3 now says explicitly that the orchestrator must include the per-reviewer report format from `references/review-output.md` in each reviewer's subagent prompt. Reviewer briefs are scoped to look-for + do-not-flag; without this directive a subagent loading only its own brief wouldn't know what shape to return.
+
 ## [0.1.34] — 2026-05-04
 
 - ci: added `.github/workflows/test.yml` that discovers and runs every `skills/*/scripts/test-*.sh` on push to main and on every PR. Catches regressions in the script-backed skills (currently `tasks-khemoo`'s `todo-md.sh`); future skills with similar layout get picked up automatically.
