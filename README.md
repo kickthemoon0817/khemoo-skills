@@ -27,6 +27,33 @@ Queue-only task management. Adding a task does not implement it — the skill re
 
 `TODO.md` is bonded via `<!-- tasks-khemoo:start -->` … `<!-- tasks-khemoo:end -->` markers, so tasks survive across sessions and hand-curated content above the markers is preserved untouched.
 
+## Repo layout
+
+```text
+.
+├── skills/
+│   ├── vc-khemoo/        end-to-end VC pipeline (commit → PR → review → merge → release)
+│   │   ├── SKILL.md
+│   │   └── references/   per-stage reference material; loaded only when needed
+│   │       ├── cores.md, specialists/{8 reviewer briefs}, review-output.md
+│   │       ├── pr-body-template.md, release-commands.md
+│   │       ├── bump-decision.md (loaded only for minor/major decisions)
+│   │       └── resolved-findings-comment.md, deferred-issue-template.md
+│   └── tasks-khemoo/     queue-only task management bonded to TODO.md
+│       ├── SKILL.md
+│       └── scripts/
+│           ├── todo-md.sh         deterministic file-edit primitives
+│           ├── test-todo-md.sh    13 regression scenarios
+│           └── test-markers.sh    bondable-section integrity check
+├── bin/test              one-command lint + regression runner (mirrors CI)
+├── .github/workflows/    CI: shellcheck + markdownlint + skill regression tests
+├── TODO.md               quick tasks bonded via `<!-- tasks-khemoo:start/end -->`
+├── CHANGELOG.md, CONTRIBUTING.md, LICENSE
+└── .claude-plugin/plugin.json
+```
+
+The two skills are independent and can be invoked separately. `tasks-khemoo` is helpful while drafting work; `vc-khemoo` ships it.
+
 ## Installation
 
 khemoo-skills ships through the `khemoo` Claude Code marketplace at <https://github.com/kickthemoon0817/khemoo-claude-plugins>:
