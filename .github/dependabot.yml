@@ -1,0 +1,11 @@
+version: 2
+
+updates:
+  # Keep GitHub Actions versions current (e.g. actions/checkout@v4 → v5).
+  # Note: ad-hoc `docker run koalaman/shellcheck:vX.Y.Z` invocations in workflows
+  # are not tracked here; bump that pin manually when shellcheck cuts a new release.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
