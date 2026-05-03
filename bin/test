@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Local test runner — mirrors what CI does (.github/workflows/test.yml):
-#   1. shellcheck every skills/*/scripts/*.sh
-#   2. run every executable skills/*/scripts/test-*.sh
+#   1. shellcheck every skills/*/scripts/*.sh    (skip with --no-lint)
+#   2. markdownlint every **/*.md (excluding workspaces)  (skip with --no-md)
+#   3. run every executable skills/*/scripts/test-*.sh
 #
 # Run from anywhere: ./bin/test
 #
-# Requires Docker for the pinned shellcheck. Pass --no-lint to skip if Docker
-# isn't available locally (CI still runs the lint).
+# Both lint steps require Docker for the pinned tool versions. Pass --no-lint
+# / --no-md to skip individually when Docker isn't available; CI still runs
+# both regardless.
 
 set -euo pipefail
 
@@ -15,11 +17,13 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 skip_lint=0
+skip_md=0
 for arg in "$@"; do
   case "$arg" in
     --no-lint) skip_lint=1 ;;
+    --no-md)   skip_md=1 ;;
     -h|--help)
-      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
   esac
@@ -39,6 +43,14 @@ if [ "$skip_lint" -eq 0 ] && [ "${#scripts[@]}" -gt 0 ]; then
   echo "=== shellcheck (${#scripts[@]} scripts, pinned koalaman/shellcheck:v0.10.0) ==="
   docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 "${scripts[@]}"
   echo "shellcheck OK"
+  echo
+fi
+
+if [ "$skip_md" -eq 0 ]; then
+  echo "=== markdownlint (pinned davidanson/markdownlint-cli2:v0.13.0) ==="
+  docker run --rm -v "$PWD:/workdir" davidanson/markdownlint-cli2:v0.13.0 \
+    "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**"
+  echo "markdownlint OK"
   echo
 fi
 

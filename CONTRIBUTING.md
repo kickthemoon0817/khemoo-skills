@@ -69,7 +69,7 @@ Run them locally before pushing. CI pins shellcheck via Docker so local results 
 ./bin/test
 ```
 
-This runs the same shellcheck (pinned via Docker) and the same regression suites that CI does, in the same order. Skip the lint with `./bin/test --no-lint` when Docker isn't available — CI will still run it.
+This runs the same shellcheck + markdownlint (both pinned via Docker) and the same regression suites that CI does, in the same order. Skip individually with `--no-lint` (shellcheck) or `--no-md` (markdownlint) when Docker isn't available — CI still runs both.
 
 Equivalent manual invocations (path-safe — match what CI does):
 

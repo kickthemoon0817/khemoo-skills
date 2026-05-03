@@ -23,6 +23,12 @@ jobs:
           # Pinned shellcheck version — `koalaman/shellcheck:stable` would drift over time.
           docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 "${scripts[@]}"
 
+      - name: Markdownlint (pinned via Docker)
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD:/workdir" davidanson/markdownlint-cli2:v0.13.0 \
+            "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**"
+
       - name: Discover and run all skills/*/scripts/test-*.sh
         run: |
           set -euo pipefail
