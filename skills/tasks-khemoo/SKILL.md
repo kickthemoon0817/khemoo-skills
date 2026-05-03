@@ -51,7 +51,7 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 
 ### `add <description>`
 
-1. **Duplicate check.** Normalize the new description (same rule as `list`); if it matches an existing pending or in-progress task, surface the match and ask `Already queued as #<id>: "<existing>". Add anyway?` Do not add until the user answers.
+1. **Duplicate check.** Normalize the new description (same rule as `list`); if it matches an existing pending or in-progress task, surface the match and ask `Already queued as #<id>: "<existing>". Add anyway?` Do not add until the user answers. **In non-interactive contexts (autonomous loops, scripted invocations) where no answer is possible, default to "do not add"** — surfacing the duplicate is the report; the user can re-invoke if intentional.
 2. Call `TaskCreate(subject=<short>, description=<full>)` — leaves status `pending`. Capture the returned task id.
 3. Append `- [ ] <description> (added <today>)` inside the bondable section of `TODO.md` (create the section if missing).
 4. Confirm to the user briefly: `Queued #<id>: <description>.`
@@ -66,11 +66,14 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 
 **Display IDs vs in-session task IDs.** The numbers shown in `list` are 1-based display IDs that the user types in follow-up commands. Internally, maintain a map `display_id → (in_session_task_id, todo_md_line_or_null)` from the most recent `list` so `done <display_id>` and `remove <display_id>` can call `TaskUpdate(taskId=<in_session_task_id>, ...)` and edit the correct line in `TODO.md`. If the user runs `done`/`remove` without a prior `list` in this conversation, run `list` first to build the map.
 
+**Map invalidation.** After any mutating command (`add`, `done`, `remove`, `cleanup`, `sync`), the display-ID map is stale (status reordering or row deletion shifts the numbering). Re-run `list` to rebuild the map before the next `done`/`remove`.
+
 ### `done <id>`
 
+0. **Idempotence guard.** If the resolved task already has `status="completed"` OR the matching `TODO.md` line already starts with `- [x]` OR already contains `, done `, do nothing and report `Already done: <description>.` Skip the rest of the steps.
 1. Resolve `<id>` against the most recently displayed merged list.
-2. `TaskUpdate(taskId=<id>, status="completed")` for the in-session task.
-3. In `TODO.md`, rewrite the matching line:
+2. `TaskUpdate(taskId=<task-id>, status="completed")` for the in-session task.
+3. In `TODO.md`, rewrite the matching line **only if it starts with `- [ ]` and does not already contain `, done `**:
 
    ```
    - [ ] foo (added 2026-05-04)
@@ -100,8 +103,8 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 
 ### `sync`
 
-1. Parse the bondable section of `TODO.md` (canonical list).
-2. `TaskList` for the in-session set.
+1. Parse the bondable section of `TODO.md` (canonical list). **If the same normalized description appears more than once within `TODO.md` (or within the in-session list)**, collapse to a single canonical entry — keep the first occurrence, drop later duplicates from the working set, and surface the dedup in the report under `Cosmetic drift`.
+2. `TaskList` for the in-session set (apply the same intra-set dedup).
 3. For each `TODO.md` task not in-session → `TaskCreate` with that description.
 4. For each in-session task not in `TODO.md` → append to the bondable section.
 5. Report what changed in this exact shape:
