@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.60] — 2026-05-04
+
+- README: added an MIT license badge alongside the CI badge.
+
 ## [0.1.59] — 2026-05-04
 
 - README: added CI status badge near the top. Activates once the unpushed commits + tags reach `origin/main` and GitHub Actions runs the workflow.
