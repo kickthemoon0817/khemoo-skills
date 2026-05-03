@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.29] — 2026-05-04
+
+- vc-khemoo: prefix all reviewer-roster `Brief` cells with the full `references/` path so SKILL.md is internally consistent with the prose convention used elsewhere (was: bare `cores.md` / `specialists/X.md` resolving relative to an implicit directory).
+
 ## [0.1.28] — 2026-05-04
 
 - README.md refreshed: now covers both skills (vc-khemoo + tasks-khemoo) with current sub-command surface, accurate specialist count (8), and a link to CHANGELOG.
