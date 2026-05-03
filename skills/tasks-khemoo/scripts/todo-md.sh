@@ -40,12 +40,21 @@ ensure_section() {
     section_template > "$TODO_FILE"
     return
   fi
-  if ! grep -qF "$START_MARKER" "$TODO_FILE"; then
+  local has_start has_end
+  grep -qF "$START_MARKER" "$TODO_FILE" && has_start=1 || has_start=0
+  grep -qF "$END_MARKER"   "$TODO_FILE" && has_end=1   || has_end=0
+  if [ "$has_start" = 0 ] && [ "$has_end" = 0 ]; then
     {
       [ -s "$TODO_FILE" ] && tail -c1 "$TODO_FILE" | grep -q . && echo
       echo
       section_template
     } >> "$TODO_FILE"
+    return
+  fi
+  if [ "$has_start" != "$has_end" ]; then
+    echo "tasks-khemoo: $TODO_FILE has a half-broken bondable section (start=$has_start, end=$has_end)." >&2
+    echo "Restore the matching marker manually before continuing." >&2
+    exit 2
   fi
 }
 

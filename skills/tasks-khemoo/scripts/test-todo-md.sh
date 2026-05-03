@@ -142,6 +142,44 @@ _Auto-managed by the \`tasks-khemoo\` skill. Hand-curated content lives above th
 <!-- tasks-khemoo:end -->"
 assert_file_eq "t9: cleanup on empty section is no-op" "$EXPECTED_EMPTY"
 
+# --- t10: description with double quotes round-trips ---
+reset_workdir
+TODAY=$TODAY "$HELPER" add 'Fix the "stuck" parser bug'
+LIST_OUT=$("$HELPER" list)
+assert_stdout_eq "t10: description with double quotes round-trips" '- [ ] Fix the "stuck" parser bug (added 2026-05-04)' "$LIST_OUT"
+
+# --- t11: unicode description round-trips ---
+reset_workdir
+TODAY=$TODAY "$HELPER" add "한글 설명 테스트 + emoji 🚀"
+LIST_OUT=$("$HELPER" list)
+assert_stdout_eq "t11: unicode description round-trips" "- [ ] 한글 설명 테스트 + emoji 🚀 (added 2026-05-04)" "$LIST_OUT"
+
+# --- t12: re-add same description does NOT dedupe at script level (skill enforces) ---
+reset_workdir
+TODAY=$TODAY "$HELPER" add "Same task"
+TODAY=$TODAY "$HELPER" add "Same task"
+COUNT=$("$HELPER" list | wc -l | tr -d ' ')
+assert_stdout_eq "t12: script-level add does not dedupe (skill must)" "2" "$COUNT"
+
+# --- t13: missing end marker — fail loud (exit 2) and leave file untouched ---
+reset_workdir
+cat > TODO.md <<'EOF'
+<!-- tasks-khemoo:start -->
+## Quick tasks
+
+- [ ] orphaned task (added 2026-05-03)
+EOF
+BEFORE=$(cat TODO.md)
+STDERR=$(TODAY=$TODAY "$HELPER" add "new task" 2>&1 >/dev/null) && EXIT=0 || EXIT=$?
+AFTER=$(cat TODO.md)
+if [ "$EXIT" = 2 ] && [ "$BEFORE" = "$AFTER" ] && echo "$STDERR" | grep -q "half-broken bondable section"; then
+  PASS=$((PASS + 1))
+  echo "PASS: t13: missing end marker → exit 2, no file mutation, helpful stderr"
+else
+  FAIL=$((FAIL + 1))
+  echo "FAIL: t13: expected exit 2 + unchanged file + stderr message; got exit=$EXIT, file changed=$([ "$BEFORE" != "$AFTER" ] && echo yes || echo no), stderr=$STDERR"
+fi
+
 echo
 echo "Result: $PASS passed, $FAIL failed."
 [ $FAIL -eq 0 ]
