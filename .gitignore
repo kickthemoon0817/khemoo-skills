@@ -3,3 +3,5 @@
 *.swo
 .omc
 .omx
+*-workspace/
+skills/*/evals/
