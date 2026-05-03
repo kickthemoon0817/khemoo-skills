@@ -4,11 +4,11 @@ Open work items for the `khemoo-skills` repo. Each task captures the user's orig
 
 ---
 
-## 1. Build `tasks-khemoo` skill — Claude Code task management discipline
+## 1. Build `tasks-khemoo` skill — Claude Code task management discipline ✅
 
-**Status:** pending
+**Status:** completed (shipped in v0.1.25, 2026-05-04)
 **Captured:** 2026-05-02
-**Where to start next session:** invoke `superpowers:brainstorming` and walk the open questions below.
+**Outcome:** `skills/tasks-khemoo/SKILL.md` ships queue-only `add` (does not implement), bondable `TODO.md` integration via `<!-- tasks-khemoo:start/end -->` markers, normalized merge that absorbs `[-_/.]` cosmetic drift, sub-commands `add` / `list` / `done` / `remove` / `cleanup` / `sync`. Validated through 3 iterations of test scenarios.
 
 ### Original user framing (verbatim)
 
