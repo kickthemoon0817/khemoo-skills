@@ -1,6 +1,10 @@
 .DS_Store
+Thumbs.db
 *.swp
 *.swo
+*.log
+.env
+.env.*
 .omc
 .omx
 .claude/
