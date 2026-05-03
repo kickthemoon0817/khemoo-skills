@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.50] — 2026-05-04
+
+- Added `bin/test` — one-command local runner that mirrors CI: pinned shellcheck via Docker + every `skills/*/scripts/test-*.sh`. Pass `--no-lint` to skip the Docker step. CONTRIBUTING.md now leads with `./bin/test` and lists the manual fallbacks.
+
 ## [0.1.49] — 2026-05-04
 
 - tasks-khemoo: extended `scripts/test-markers.sh` to also verify the auto-managed paragraph is byte-identical between `todo-md.sh`'s `section_template` and `TODO.md`. Surfaced a real divergence: the heredoc used `\\\`tasks-khemoo\\\`` escapes (because `<<EOF` interprets backticks as command substitution), so source bytes ≠ rendered bytes. Switched the heredoc to single-quoted `<<'EOF'` and hardcoded the constant markers — no expansion, no escapes, source matches what gets written to disk. Test now validates the full paragraph round-trip.
