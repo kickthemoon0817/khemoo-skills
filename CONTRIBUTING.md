@@ -71,14 +71,16 @@ Run them locally before pushing. CI pins shellcheck via Docker so local results 
 
 This runs the same shellcheck (pinned via Docker) and the same regression suites that CI does, in the same order. Skip the lint with `./bin/test --no-lint` when Docker isn't available — CI will still run it.
 
-Equivalent manual invocations:
+Equivalent manual invocations (path-safe — match what CI does):
 
 ```bash
 # Lint — uses the same pinned shellcheck version as CI
-docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 skills/*/scripts/*.sh
+mapfile -t scripts < <(find skills -type f -path '*/scripts/*.sh' | sort)
+docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 "${scripts[@]}"
 
 # Tests
-for t in skills/*/scripts/test-*.sh; do "$t"; done
+mapfile -t tests < <(find skills -type f -path '*/scripts/test-*.sh' -perm -u+x | sort)
+for t in "${tests[@]}"; do "$t"; done
 ```
 
 ## Tracking work
