@@ -22,6 +22,22 @@ The native task tools (`TaskCreate` / `TaskUpdate` / `TaskList`) only persist fo
 - `/tasks-khemoo cleanup` — remove all completed tasks from both
 - `/tasks-khemoo sync` — reconcile: pull external `TODO.md` edits into the in-session list and push in-session tasks to `TODO.md`
 
+## Helper script (preferred for file edits)
+
+`scripts/todo-md.sh` performs the bondable-section mutations deterministically. It is idempotent (`done` skips already-done lines, `cleanup` is a no-op when nothing is done, `add` does not deduplicate — the skill's duplicate-check runs first). **Prefer the script over hand-rolled file edits** so the operations match the spec exactly.
+
+```bash
+./scripts/todo-md.sh add "Refactor the auth module"
+./scripts/todo-md.sh done "Refactor the auth module"
+./scripts/todo-md.sh remove "Bump dep X to 2.0"
+./scripts/todo-md.sh cleanup
+./scripts/todo-md.sh list
+```
+
+The script reads/writes `TODO.md` in the current working directory. Override with `TODO_FILE=path/to/TODO.md`. Date defaults to `date +%Y-%m-%d`; override with `TODAY=YYYY-MM-DD` for tests.
+
+If `bash` / `awk` are unavailable in the environment, fall back to performing the edits directly per the operational rules below.
+
 ## TODO.md bondable section
 
 The skill only touches the section of `TODO.md` between these HTML-comment markers. Everything outside the markers (including rich hand-curated h2-per-task planning sections) is preserved untouched.
