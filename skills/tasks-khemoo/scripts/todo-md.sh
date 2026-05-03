@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
+# (SC2016: awk programs are single-quoted intentionally; shell variables are
+#  passed in via `awk -v`, not via $-expansion inside the quotes.)
 # tasks-khemoo TODO.md helper.
 # Manages the bondable section between
 #   <!-- tasks-khemoo:start -->
@@ -44,8 +47,13 @@ ensure_section() {
   grep -qF "$START_MARKER" "$TODO_FILE" && has_start=1 || has_start=0
   grep -qF "$END_MARKER"   "$TODO_FILE" && has_end=1   || has_end=0
   if [ "$has_start" = 0 ] && [ "$has_end" = 0 ]; then
+    # Capture trailing-newline status BEFORE writing to avoid same-file read/write in one pipeline.
+    local trailing=""
+    if [ -s "$TODO_FILE" ] && tail -c1 "$TODO_FILE" | grep -q .; then
+      trailing="missing"
+    fi
     {
-      [ -s "$TODO_FILE" ] && tail -c1 "$TODO_FILE" | grep -q . && echo
+      [ "$trailing" = "missing" ] && echo
       echo
       section_template
     } >> "$TODO_FILE"

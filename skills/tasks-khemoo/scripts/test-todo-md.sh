@@ -13,7 +13,7 @@ FAIL=0
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
-cd "$WORK"
+cd "$WORK" || exit 1
 
 assert_file_eq() {
   local label="$1" expected="$2"
@@ -67,7 +67,7 @@ _Auto-managed by the \`tasks-khemoo\` skill. Hand-curated content lives above th
 <!-- tasks-khemoo:end -->"
 
 # --- t3: done flips and stamps ---
-TODAY=$TODAY "$HELPER" done "Refactor the auth module"
+TODAY=$TODAY "$HELPER" "done" "Refactor the auth module"
 assert_file_eq "t3: done flips [ ] to [x] and stamps" "<!-- tasks-khemoo:start -->
 ## Quick tasks
 
@@ -79,7 +79,7 @@ _Auto-managed by the \`tasks-khemoo\` skill. Hand-curated content lives above th
 
 # --- t4: done twice is a no-op (idempotence) ---
 EXPECTED_AFTER_DONE=$(cat TODO.md)
-TODAY=$TODAY "$HELPER" done "Refactor the auth module"
+TODAY=$TODAY "$HELPER" "done" "Refactor the auth module"
 assert_file_eq "t4: done twice is no-op" "$EXPECTED_AFTER_DONE"
 
 # --- t5: cleanup removes [x] lines ---

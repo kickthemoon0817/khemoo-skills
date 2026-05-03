@@ -12,16 +12,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Shellcheck all skills/*/scripts/*.sh
+        run: |
+          set -euo pipefail
+          # ubuntu-latest ships shellcheck pre-installed
+          mapfile -t scripts < <(find skills -type f -path '*/scripts/*.sh' | sort)
+          if [ "${#scripts[@]}" -eq 0 ]; then
+            echo "No shell scripts under skills/*/scripts/ — skipping."
+            exit 0
+          fi
+          shellcheck "${scripts[@]}"
+
       - name: Discover and run all skills/*/scripts/test-*.sh
         run: |
           set -euo pipefail
-          tests=$(find skills -type f -path '*/scripts/test-*.sh' -perm -u+x | sort)
-          if [ -z "$tests" ]; then
+          mapfile -t tests < <(find skills -type f -path '*/scripts/test-*.sh' -perm -u+x | sort)
+          if [ "${#tests[@]}" -eq 0 ]; then
             echo "No test scripts found under skills/*/scripts/test-*.sh — nothing to run."
             exit 0
           fi
           fail=0
-          for t in $tests; do
+          for t in "${tests[@]}"; do
             echo "=== $t ==="
             if "$t"; then
               echo "OK: $t"
