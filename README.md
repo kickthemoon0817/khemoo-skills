@@ -1,5 +1,7 @@
 # khemoo-skills
 
+[![test](https://github.com/kickthemoon0817/khemoo-skills/actions/workflows/test.yml/badge.svg)](https://github.com/kickthemoon0817/khemoo-skills/actions/workflows/test.yml)
+
 Claude Code plugin with focused workflow skills for version control and task management.
 
 > **Status:** pre-1.0 (`v0.x.y`). The skills are stable in shape but the surface may still shift on minor bumps. See [CHANGELOG.md](./CHANGELOG.md) for what's changed lately.
