@@ -63,15 +63,17 @@ CI runs:
 1. `shellcheck` against every `skills/*/scripts/*.sh` (must pass cleanly — use `# shellcheck disable=SCxxxx` directives only for documented false positives).
 2. Every `skills/*/scripts/test-*.sh` discovered via `find`.
 
-Run them locally before pushing:
+Run them locally before pushing. CI pins shellcheck via Docker so local results match what CI sees:
 
 ```bash
-# Lint (requires shellcheck)
-shellcheck skills/*/scripts/*.sh
+# Lint — uses the same pinned shellcheck version as CI
+docker run --rm -v "$PWD:/repo" -w /repo koalaman/shellcheck:v0.10.0 skills/*/scripts/*.sh
 
 # Tests
 for t in skills/*/scripts/test-*.sh; do "$t"; done
 ```
+
+If you don't have Docker, `shellcheck skills/*/scripts/*.sh` against your locally-installed shellcheck is the fallback — but versions newer or older than v0.10.0 may surface different findings than CI.
 
 ## Tracking work
 
