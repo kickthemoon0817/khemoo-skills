@@ -51,10 +51,11 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 
 ### `add <description>`
 
-1. Call `TaskCreate(subject=<short>, description=<full>)` — leaves status `pending`.
-2. Append `- [ ] <description> (added <today>)` inside the bondable section of `TODO.md` (create the section if missing).
-3. Confirm to the user briefly: `Queued: <description>. /tasks-khemoo to see all tasks.`
-4. **Stop.** Do not start implementation. If the description sounds like a single direct command the user wants done now ("rename foo to bar"), pause and ask: "Do you want me to do this now, or just queue it?"
+1. **Duplicate check.** Normalize the new description (same rule as `list`); if it matches an existing pending or in-progress task, surface the match and ask `Already queued as #<id>: "<existing>". Add anyway?` Do not add until the user answers.
+2. Call `TaskCreate(subject=<short>, description=<full>)` — leaves status `pending`. Capture the returned task id.
+3. Append `- [ ] <description> (added <today>)` inside the bondable section of `TODO.md` (create the section if missing).
+4. Confirm to the user briefly: `Queued #<id>: <description>.`
+5. **Stop.** Do not start implementation. If the description sounds like a single direct command the user wants done now ("rename foo to bar"), pause before step 1 and ask: "Do you want me to do this now, or just queue it?"
 
 ### `/tasks-khemoo` (default `list`)
 
@@ -66,13 +67,25 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 ### `done <id>`
 
 1. Resolve `<id>` against the most recently displayed merged list.
-2. `TaskUpdate(status="completed")` for the in-session task.
-3. Rewrite the matching `- [ ] ` line in `TODO.md` to `- [x] `, appending `, done <today>` to the parenthetical.
+2. `TaskUpdate(taskId=<id>, status="completed")` for the in-session task.
+3. In `TODO.md`, rewrite the matching line:
+
+   ```
+   - [ ] foo (added 2026-05-04)
+   ```
+
+   becomes
+
+   ```
+   - [x] foo (added 2026-05-04, done 2026-05-04)
+   ```
+
+   Insert `, done <today>` immediately before the closing `)`.
 
 ### `remove <id>`
 
 1. Resolve `<id>` against the merged list.
-2. Remove from the in-session list (`TaskUpdate` to a terminal state, or the matching delete primitive if available).
+2. `TaskUpdate(taskId=<id>, status="deleted")` to remove from the in-session list (`deleted` is a terminal status that drops the task entirely).
 3. Delete the matching line from the bondable section of `TODO.md`.
 4. Confirm: `Removed: <description>.`
 
@@ -89,7 +102,16 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 2. `TaskList` for the in-session set.
 3. For each `TODO.md` task not in-session → `TaskCreate` with that description.
 4. For each in-session task not in `TODO.md` → append to the bondable section.
-5. Report what changed: `Synced. Pulled N from TODO.md, pushed M to TODO.md.`
+5. Report what changed in this exact shape:
+
+   ```
+   Synced. Pulled N from TODO.md, pushed M to TODO.md.
+   - Pulled: "<description>", "<description>", ...
+   - Pushed: "<description>", "<description>", ...
+   - Cosmetic drift: <only if any normalized-equal pairs differ in raw text>
+   ```
+
+   Omit any line whose list is empty.
 
 ## When NOT to use
 
