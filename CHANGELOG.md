@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.41] — 2026-05-04
+
+- ci: pinned shellcheck via Docker (`koalaman/shellcheck:v0.10.0`) instead of the runner's default. Prevents future shellcheck rule additions from silently breaking the build when the ubuntu-latest image is updated.
+
 ## [0.1.40] — 2026-05-04
 
 - README: cross-linked the new CONTRIBUTING.md and pointed the License section at the LICENSE file (was just bare "MIT").
