@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.38] — 2026-05-04
+
+- Added `LICENSE` file. README has been claiming MIT since v0.1.0 (and `plugin.json` declares it), but the actual LICENSE file was missing — added the standard MIT text with copyright holder "khemoo".
+
 ## [0.1.37] — 2026-05-04
 
 - ci: extended `.github/workflows/test.yml` with a shellcheck step that runs against every `skills/*/scripts/*.sh`. Hardened both CI loops to use `mapfile`/quoted arrays so paths with spaces won't break the discovery.
