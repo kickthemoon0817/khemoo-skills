@@ -60,6 +60,10 @@ Inside a Claude Code session:
 
 See [CHANGELOG.md](./CHANGELOG.md).
 
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the conventions (Conventional Commits without parens, branch naming, PR review expectations, semver bump rules, local lint/test commands).
+
 ## License
 
-MIT
+MIT — see [LICENSE](./LICENSE).
