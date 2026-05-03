@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.58] — 2026-05-04
+
+- TODO.md: trimmed task #1's completed entry from ~40 lines (Required behaviors / Open design questions / Suggested kickoff for unbuilt work) down to a one-paragraph "Outcome" stub. The skill exists and answers those questions; the planning notes are now stale documentation.
+
 ## [0.1.57] — 2026-05-04
 
 - README: added a "Repo layout" section with a directory tree showing where each artifact lives (skills + their reference material, scripts, CI, ancillary docs). Saves a new visitor a few `ls` commands and surfaces the progressive-disclosure shape of the reference files.
