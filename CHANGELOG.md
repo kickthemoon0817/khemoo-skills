@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.61] — 2026-05-04
+
+- Added `CLAUDE.md` distilling tactical reminders for AI agents working ON this repo (one-command verification, pinned linters, versioning bias, commit format, test auto-discovery, skill reference-loading discipline, macOS bash 3.2 floor, heredoc-backtick gotcha). Complements CONTRIBUTING.md (which targets human contributors).
+
 ## [0.1.60] — 2026-05-04
 
 - README: added an MIT license badge alongside the CI badge.
