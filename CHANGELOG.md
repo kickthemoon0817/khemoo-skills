@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.68] — 2026-05-15
+
+- setup-khemoo: added HUD via Claude Code's `statusLine` mechanism. New `assets/statusline.sh` (dependency-free bash, parses model/session/cwd/transcript_path from the status payload, renders `<model> · <project> · <session-short> · <N turns>`). `settings.json` template now ships with a `statusLine` block whose command is substituted to the absolute installed script path at setup time (works under both `--project` and `--user`). test-setup.sh: 14 → 18 cases (HUD install, executable bit, path substitution, smoke render).
+
 ## [0.1.67] — 2026-05-14
 
 - vc-khemoo: renamed `references/specialists/` → `references/agents/`. Dropped "specialist" terminology from SKILL.md and cores.md in favor of "agent" — matches the `~/.claude/agents/` convention used elsewhere and the dual-purpose framing (the files describe agents that can review and operate, not review-only specialists). All 15 reference paths still resolve; test-references unchanged. 38 markdown files lint-clean.
