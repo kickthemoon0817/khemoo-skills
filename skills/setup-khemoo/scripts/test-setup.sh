@@ -49,6 +49,27 @@ assert_file_exists "t1: .markdownlint.json written" "$PROJ/.markdownlint.json"
 assert_file_exists "t1: code-reviewer agent written" "$PROJ/.claude/agents/code-reviewer.md"
 assert_file_exists "t1: writer agent written" "$PROJ/.claude/agents/writer.md"
 
+# --- t1b: HUD statusline.sh is written, executable, and absolute path is baked into settings.json ---
+assert_file_exists "t1b: statusline.sh written" "$PROJ/.claude/scripts/statusline.sh"
+if [ -x "$PROJ/.claude/scripts/statusline.sh" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1b: statusline.sh is executable"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1b: statusline.sh is not executable"
+fi
+if grep -q "$PROJ/.claude/scripts/statusline.sh" "$PROJ/.claude/settings.json"; then
+  PASS=$((PASS + 1)); echo "PASS: t1b: settings.json statusLine points at the installed script"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1b: settings.json statusLine path was not substituted"
+fi
+
+# --- t1c: statusline.sh produces a non-empty line on a minimal stub payload ---
+HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abcdef1234","workspace":{"current_dir":"/tmp/demo"}}' | "$PROJ/.claude/scripts/statusline.sh")
+if [ -n "$HUD_OUT" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1c: statusline.sh renders a line ($HUD_OUT)"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1c: statusline.sh produced empty output"
+fi
+
 # --- t2: idempotent re-run does not overwrite ---
 echo "custom-content" > "$PROJ/CLAUDE.md"
 ROOT="$PROJ" "$SETUP" >/dev/null 2>&1

@@ -63,11 +63,30 @@ else
   write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
 fi
 
-# Claude Code settings.
+# HUD statusline script + Claude Code settings (statusLine wired to absolute
+# script path so it works regardless of cwd at runtime).
 if [ "$SCOPE" = "user" ]; then
-  write_once "$ASSETS/settings.json" "$TARGET/settings.json"
+  CLAUDE_DIR="$TARGET"
 else
-  write_once "$ASSETS/settings.json" "$TARGET/.claude/settings.json"
+  CLAUDE_DIR="$TARGET/.claude"
+fi
+STATUSLINE_DST="$CLAUDE_DIR/scripts/statusline.sh"
+SETTINGS_DST="$CLAUDE_DIR/settings.json"
+
+write_once "$ASSETS/statusline.sh" "$STATUSLINE_DST"
+chmod +x "$STATUSLINE_DST" 2>/dev/null || true
+
+# Settings template carries a @STATUSLINE_PATH@ placeholder; substitute the
+# absolute path before writing so the statusLine command resolves no matter
+# what cwd Claude Code runs from.
+if [ ! -e "$SETTINGS_DST" ]; then
+  mkdir -p "$(dirname "$SETTINGS_DST")"
+  sed "s|@STATUSLINE_PATH@|$STATUSLINE_DST|g" "$ASSETS/settings.json" > "$SETTINGS_DST"
+  echo "wrote: $SETTINGS_DST"
+  wrote=$((wrote + 1))
+else
+  echo "skip:  $SETTINGS_DST (exists)"
+  skipped=$((skipped + 1))
 fi
 
 # Project-only files (editor/lint configs don't make sense at user scope).
