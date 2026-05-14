@@ -1,49 +1,60 @@
 ---
 name: setup-khemoo
-description: Use whenever editing or authoring docs, code, or comments in this project — enforces a leanness regime that keeps stable artifacts stable so the prompt cache compounds across sessions. Triggers on writing/editing markdown, adding code comments, refactoring, removing code, project bootstrap. Also use when the user says "audit my repo for AI-slop patterns", "set up project for AI collaboration", or "/setup-khemoo audit". Invoke this BEFORE editing live docs and BEFORE adding inline comments — it tells you what NOT to do.
+description: Use whenever the user wants to bootstrap a project (or their user-global Claude config) for AI collaboration — sets up `CLAUDE.md`, `.claude/settings.json`, `.editorconfig`, `.markdownlint.json`, and a curated agent stack at `.claude/agents/`. Triggers on "set up this project for Claude", "bootstrap CLAUDE.md", "install the agent stack", "/setup-khemoo", or when the user starts a new project that needs the standard scaffolding. Invoke even when the user phrases the ask casually ("get this repo Claude-ready", "drop in the usual configs").
 ---
 
-# Project leanness for cache-friendly AI collaboration
+# Project + user-config bootstrap for AI collaboration
 
 ## Sub-commands
 
-- `/setup-khemoo` — show what the skill enforces (this file)
-- `/setup-khemoo audit [--project|--user]` — run `scripts/audit.sh`; reports lexical violations of disciplines 1–3 and flags 4–6 for semantic review
-- `/setup-khemoo bootstrap [--project|--user]` — initialize a starter `CLAUDE.md` surfacing these disciplines (no overwrite)
+- `/setup-khemoo` — full setup at project scope (default)
+- `/setup-khemoo --project` — explicit project scope (same as default)
+- `/setup-khemoo --user` — full setup at user scope (`~/.claude/`)
 
-### Scope flags
+Idempotent — never overwrites existing files. Reports which files were written vs skipped because they already exist.
 
-- `--project` (default): scan/write inside the current project. Resolves to the git toplevel or `$PWD`. Prunes `.git`, `node_modules`, `*-workspace`, this skill itself, and `test-*.sh` fixtures.
-- `--user`: scan/write inside `~/.claude/` (user-authored CLAUDE.md, custom skills, custom commands). Prunes third-party plugins, session logs, and caches — those aren't the user's authorship.
+## What gets written
 
-Scope only changes *where* the disciplines apply; the discipline rules themselves are the same.
+### Workspace files
 
-## The 6 disciplines
+| File | `--project` (default) | `--user` |
+|---|---|---|
+| `CLAUDE.md` (tactical reminders + leanness disciplines) | `<root>/CLAUDE.md` | `~/.claude/CLAUDE.md` |
+| Claude Code settings | `<root>/.claude/settings.json` | `~/.claude/settings.json` |
+| `.editorconfig` | `<root>/.editorconfig` | — (project-only) |
+| `.markdownlint.json` | `<root>/.markdownlint.json` | — (project-only) |
 
-### 1. No history-in-docs
+`<root>` is the git toplevel, or `$PWD` if not inside a git repo.
 
-Live docs describe the present. Drop `(preferred over X)` / `(replaces Y)` / `(introduced in version Z)` / `(was previously done via W)` / `(deprecated in favor of ...)` parentheticals.
+### Agent stack
 
-### 2. No WHAT-comments in code
+A curated set of subagent configs that match `vc-khemoo`'s Stage 3 reviewer roster. Written to:
 
-Comments explain *why* (hidden constraint, subtle invariant, workaround), never *what* (well-named identifiers do that). Forbidden: `// used by X`, `// added for the Y flow`, `// handles the case from issue #123`.
+- `<root>/.claude/agents/<name>.md` for `--project`
+- `~/.claude/agents/<name>.md` for `--user`
 
-### 3. No "removed" markers
+Agents installed:
 
-When removing code, delete cleanly. No `// removed: ...` markers, no dead exports, no backward-compat shims for code nothing uses.
+- `code-reviewer` — logic, architecture, API contracts, backwards compatibility
+- `security-reviewer` — OWASP-Top-10 surface
+- `quality-reviewer` — naming, patterns, anti-patterns
+- `test-engineer` — coverage, edge cases, test quality
+- `designer` — UI/UX + visual design
+- `build-fixer` — CI/CD, Dockerfiles, infra
+- `writer` — docs clarity, API docs
 
-### 4. No defensive validation past trust boundaries
+The agent files are minimal identity stubs; role-specific briefs for each reviewer live in `vc-khemoo`'s reference files and are loaded at dispatch time.
 
-Validate at user input and external-API boundaries only. Don't add guards for "scenarios that can't happen" inside trusted internal code.
+## Operational rules
 
-### 5. No premature abstraction
+1. Resolve scope (`--project` default, `--user` if flag passed). Reject unknown args with exit 2.
+2. Resolve target root (`$HOME/.claude` for user, git toplevel or `$PWD` for project).
+3. For each file in the scope-appropriate set: write only if the destination does not exist. Print `wrote: <path>` or `skip: <path> (exists)`.
+4. Report total written / skipped at the end.
 
-Three similar lines beat a premature helper. No half-finished implementations, no feature flags for code that isn't being shipped. Generalize after the third occurrence, not the first.
+The script implementation lives at `scripts/setup.sh`. Run it directly:
 
-### 6. No restated TL;DRs
-
-If a section's first sentence restates the heading, drop it. If a heading restates what the prose under it already says, drop the heading.
-
-## Bootstrap
-
-`/setup-khemoo bootstrap` writes a compact `CLAUDE.md` at the project root if none exists. Surfaces the 6 disciplines for any agent working in the project. Idempotent — never overwrites an existing `CLAUDE.md`.
+```bash
+./skills/setup-khemoo/scripts/setup.sh           # project scope
+./skills/setup-khemoo/scripts/setup.sh --user    # user scope
+```
