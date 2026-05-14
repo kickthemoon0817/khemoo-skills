@@ -44,14 +44,6 @@ Three similar lines beat a premature helper. No half-finished implementations, n
 
 If a section's first sentence restates the heading, drop it. If a heading restates what the prose under it already says, drop the heading.
 
-## Relation to vc-khemoo
-
-`vc-khemoo`'s Red Flags section enforces some of these at commit time (especially around commit-message hygiene). Where the rules overlap, vc-khemoo is the source of truth and `setup-khemoo` cites it. The two skills are complementary, not redundant.
-
-## Audit limitations
-
-The audit script (`scripts/audit.sh`) catches lexical patterns for disciplines 1–3 with high precision. Disciplines 4–6 are conceptual — the script reports them as "needs human/agent semantic review" without trying to detect them by regex. Run a code-review pass (or invoke vc-khemoo's review stage) to catch them.
-
 ## Bootstrap
 
 `/setup-khemoo bootstrap` writes a compact `CLAUDE.md` at the project root if none exists. Surfaces the 6 disciplines for any agent working in the project. Idempotent — never overwrites an existing `CLAUDE.md`.
