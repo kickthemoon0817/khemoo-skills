@@ -24,7 +24,7 @@ The 5 always-dispatched reviewers. Run in parallel as 5 distinct sessions. There
 
 **Look for:** algorithmic complexity (O(n²) where O(n log n) or O(n) fits; nested loops over the same collection; hoistable repeated work); N+1 queries (per-iteration DB / API / file calls inside loops); memory (unbounded growth per request; large object retention; loading entire files where streaming would do); latency (blocking IO on the request path; sync CPU-heavy work in event loops; unbounded waits without timeout); caching (repeated computation within a request; cache-key correctness, no cross-user collisions); pagination / streaming (list endpoints loading everything; large file responses without streaming).
 
-**Do NOT flag:** cache locality, lock contention, syscall overhead, hot-loop allocation → Systems Performance specialist. Code style → Quality. Security implications → Security.
+**Do NOT flag:** cache locality, lock contention, syscall overhead, hot-loop allocation → Systems Performance agent. Code style → Quality. Security implications → Security.
 
 ## Test Engineer (`test-engineer`, sonnet)
 
