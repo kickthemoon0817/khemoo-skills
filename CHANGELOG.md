@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.66] — 2026-05-14
+
+- setup-khemoo: pivoted scope from leanness-audit to project + user-config bootstrap. `/setup-khemoo` (default `--project`) now scaffolds `CLAUDE.md`, `.claude/settings.json`, `.editorconfig`, `.markdownlint.json`, and a curated agent stack (`.claude/agents/{code-reviewer,security-reviewer,quality-reviewer,test-engineer,designer,build-fixer,writer}.md`). `--user` writes the equivalent set inside `~/.claude/` (excluding project-only editor/lint configs). Idempotent — never overwrites. Removed the audit code (`scripts/audit.sh`, `scripts/test-audit.sh`) since the leanness disciplines now live inside the written `CLAUDE.md` and are agent-enforced. New test suite `test-setup.sh` covers 14 scenarios (idempotence, scope flags, file presence, bad-arg handling).
+
 ## [0.1.65] — 2026-05-14
 
 - setup-khemoo: dropped redundant "Audit limitations" and "Relation to vc-khemoo" sections. Sub-command section already says audit reports disciplines 1–3 and flags 4–6 for semantic review; inter-skill positioning didn't earn its lines. SKILL.md now 49 lines.
