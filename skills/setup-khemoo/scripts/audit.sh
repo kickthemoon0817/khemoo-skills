@@ -2,27 +2,64 @@
 # setup-khemoo audit — lexical scan for the 3 lexically-detectable disciplines.
 # Disciplines 4-6 require semantic review and are not scanned here.
 #
-# Run from the project root: ./skills/setup-khemoo/scripts/audit.sh
-# Exit 0 = clean. Exit 1 = violations found.
+# Run from anywhere:
+#   ./audit.sh              # --project (default): scan the current project
+#   ./audit.sh --project    # explicit project scope
+#   ./audit.sh --user       # scan user-authored ~/.claude/ content
+# Exit 0 = clean. Exit 1 = violations found. Exit 2 = bad usage.
 
 set -uo pipefail
 
-ROOT="${ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-cd "$ROOT" || exit 2
+SCOPE="project"
+for arg in "$@"; do
+  case "$arg" in
+    --project) SCOPE="project" ;;
+    --user)    SCOPE="user" ;;
+    -h|--help)
+      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $arg" >&2
+      echo "Use --project (default) or --user." >&2
+      exit 2
+      ;;
+  esac
+done
 
-# Build path-exclusion args for find. Anything under .git, node_modules, or
-# *-workspace is out of scope (eval artifacts, vendor, history).
-# Prune:
-#  - .git, node_modules, *-workspace (vendor / history / eval artifacts)
-#  - skills/setup-khemoo (this skill names the forbidden patterns by definition)
-#  - test-*.sh (test fixtures intentionally contain the patterns)
-prune_args=(
-  -path './.git' -prune -o
-  -path './node_modules' -prune -o
-  -path './*-workspace' -prune -o
-  -path './skills/setup-khemoo' -prune -o
-  -name 'test-*.sh' -prune -o
-)
+if [ "$SCOPE" = "user" ]; then
+  ROOT="${HOME}/.claude"
+  if [ ! -d "$ROOT" ]; then
+    echo "User-scope audit needs $ROOT but the directory does not exist." >&2
+    exit 2
+  fi
+  # User-scope prune: third-party plugins, session logs, caches — those
+  # aren't the user's own authorship.
+  prune_args=(
+    -path "$ROOT/.git" -prune -o
+    -path "$ROOT/plugins" -prune -o
+    -path "$ROOT/projects" -prune -o
+    -path "$ROOT/sessions" -prune -o
+    -path "$ROOT/shell-snapshots" -prune -o
+    -path "$ROOT/local-cache" -prune -o
+    -path "$ROOT/todos" -prune -o
+  )
+else
+  ROOT="${ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+  # Project-scope prune: vendor / history / eval artifacts, this skill (names
+  # the forbidden patterns by definition), and test-*.sh (fixtures).
+  prune_args=(
+    -path "$ROOT/.git" -prune -o
+    -path "$ROOT/node_modules" -prune -o
+    -path "$ROOT/*-workspace" -prune -o
+    -path "$ROOT/skills/setup-khemoo" -prune -o
+    -name 'test-*.sh' -prune -o
+  )
+fi
+
+cd "$ROOT" || exit 2
+echo "Scope: $SCOPE ($ROOT)"
+echo
 
 # Patterns for the 3 lexical disciplines.
 HISTORY_DOC_RE='\((preferred over|replaces|introduced in version|was previously done via|deprecated in favor of) '
@@ -43,7 +80,7 @@ scan() {
       hits=$((hits + 1))
     fi
   done < <(
-    find . "${prune_args[@]}" -type f \( "${globs[@]}" \) -print
+    find "$ROOT" "${prune_args[@]}" -type f \( "${globs[@]}" \) -print
   )
   if [ "$hits" -eq 0 ]; then
     echo "  clean"

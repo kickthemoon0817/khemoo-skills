@@ -12,8 +12,15 @@ Prompt caching cuts per-session cost dramatically — but only when stable artif
 ## Sub-commands
 
 - `/setup-khemoo` — show what the skill enforces (this file)
-- `/setup-khemoo audit` — run `scripts/audit.sh`; reports lexical violations of disciplines 1–3 and flags 4–6 for semantic review
-- `/setup-khemoo bootstrap` — initialize a starter `CLAUDE.md` at the project root surfacing these disciplines for the project's own agents (no overwrite)
+- `/setup-khemoo audit [--project|--user]` — run `scripts/audit.sh`; reports lexical violations of disciplines 1–3 and flags 4–6 for semantic review
+- `/setup-khemoo bootstrap [--project|--user]` — initialize a starter `CLAUDE.md` surfacing these disciplines (no overwrite)
+
+### Scope flags
+
+- `--project` (default): scan/write inside the current project. Resolves to the git toplevel or `$PWD`. Prunes `.git`, `node_modules`, `*-workspace`, this skill itself, and `test-*.sh` fixtures.
+- `--user`: scan/write inside `~/.claude/` (user-authored CLAUDE.md, custom skills, custom commands). Prunes third-party plugins, session logs, and caches — those aren't the user's authorship.
+
+Scope only changes *where* the disciplines apply; the discipline rules themselves are the same.
 
 ## The 6 disciplines
 

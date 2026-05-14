@@ -93,6 +93,31 @@ The auth helper is used by the login flow.
 EOF
 assert_eq "t6: WHAT-comment phrase in .md → exit 0" 0 "$(run_audit "$WORK/t6")"
 
+# t7: explicit --project flag is accepted and behaves like default
+make_clean_repo "$WORK/t7"
+ROOT="$WORK/t7" "$AUDIT" --project >/dev/null 2>&1
+assert_eq "t7: --project flag → exit 0 on clean repo" 0 "$?"
+
+# t8: --user flag finds violations in user-authored content under $HOME/.claude
+USER_HOME=$(mktemp -d)
+mkdir -p "$USER_HOME/.claude"
+cat > "$USER_HOME/.claude/CLAUDE.md" <<'EOF'
+Use `git switch -c <branch>` (preferred over `git checkout -b`).
+EOF
+HOME="$USER_HOME" "$AUDIT" --user >/dev/null 2>&1
+assert_eq "t8: --user flag flags violation in ~/.claude/" 1 "$?"
+rm -rf "$USER_HOME"
+
+# t9: --user flag with missing ~/.claude exits 2
+USER_HOME=$(mktemp -d)
+HOME="$USER_HOME" "$AUDIT" --user >/dev/null 2>&1
+assert_eq "t9: --user with no ~/.claude → exit 2" 2 "$?"
+rm -rf "$USER_HOME"
+
+# t10: unknown argument exits 2
+"$AUDIT" --bogus >/dev/null 2>&1
+assert_eq "t10: unknown flag → exit 2" 2 "$?"
+
 echo
 echo "Result: $PASS passed, $FAIL failed."
 [ $FAIL -eq 0 ]
