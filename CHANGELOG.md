@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.65] — 2026-05-14
+
+- setup-khemoo: dropped redundant "Audit limitations" and "Relation to vc-khemoo" sections. Sub-command section already says audit reports disciplines 1–3 and flags 4–6 for semantic review; inter-skill positioning didn't earn its lines. SKILL.md now 49 lines.
+
 ## [0.1.64] — 2026-05-14
 
 - setup-khemoo: dropped redundant "Why this matters" essay (duplicated the frontmatter description) and the per-discipline justification tails (the rules are self-explanatory at the level of detail given). SKILL.md from 75 → 57 lines.
