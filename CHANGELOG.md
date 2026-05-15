@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.69] — 2026-05-15
+
+- setup-khemoo HUD now surfaces usage caps and current context inline. Render: `<model> · <project> NN% (Xh Ym/5h) NN% (Xd Yh/7d) · <session> · <N turns> · <X>k/<limit> context`. Percentages colored green/yellow/red by threshold (50/80); width-stable padding (pct 4 chars, elapsed 6 chars) keeps the line steady as values change. Missing sources render gray `???`/`zzz` placeholders rather than dropping segments. Context tier is inferred from the model name (Opus → 1m) and auto-promoted when observed tokens exceed 200k. Usage cache lives at `~/.claude/usage-cache.json`; `$USAGE_CACHE` overrides. SKILL.md HUD section trimmed — internals documented inline in `assets/statusline.sh`. test-setup.sh: 18 → 24 cases (placeholders, color, width stability, tier detection).
+
 ## [0.1.68] — 2026-05-15
 
 - setup-khemoo: added HUD via Claude Code's `statusLine` mechanism. New `assets/statusline.sh` (dependency-free bash, parses model/session/cwd/transcript_path from the status payload, renders `<model> · <project> · <session-short> · <N turns>`). `settings.json` template now ships with a `statusLine` block whose command is substituted to the absolute installed script path at setup time (works under both `--project` and `--user`). test-setup.sh: 14 → 18 cases (HUD install, executable bit, path substitution, smoke render).
