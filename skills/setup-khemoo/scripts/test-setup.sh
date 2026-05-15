@@ -63,11 +63,69 @@ else
 fi
 
 # --- t1c: statusline.sh produces a non-empty line on a minimal stub payload ---
-HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abcdef1234","workspace":{"current_dir":"/tmp/demo"}}' | "$PROJ/.claude/scripts/statusline.sh")
+HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abcdef1234","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
 if [ -n "$HUD_OUT" ]; then
   PASS=$((PASS + 1)); echo "PASS: t1c: statusline.sh renders a line ($HUD_OUT)"
 else
   FAIL=$((FAIL + 1)); echo "FAIL: t1c: statusline.sh produced empty output"
+fi
+
+# --- t1d: ctx token count from transcript usage block ---
+TRANSCRIPT="$WORK/transcript.jsonl"
+cat > "$TRANSCRIPT" <<'JSONL'
+{"role":"user","content":"hi"}
+{"role":"assistant","content":"x","usage":{"input_tokens":15500,"cache_creation_input_tokens":0,"cache_read_input_tokens":102000,"output_tokens":340}}
+JSONL
+# 15500 + 102000 = 117500 tokens used → "118k/200k context" for the default tier.
+HUD_OUT=$(printf '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"},"transcript_path":"%s"}' "$TRANSCRIPT" | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
+if echo "$HUD_OUT" | grep -qE '118k/200k context([^[:alnum:]]|$)'; then
+  PASS=$((PASS + 1)); echo "PASS: t1d: used/limit context for 200k tier ($HUD_OUT)"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1d: expected '118k/200k context', got: $HUD_OUT"
+fi
+
+# 1M tier: same 117500 tokens used → "118k/1m context".
+HUD_OUT=$(printf '{"model":{"display_name":"Claude Opus 4.7 (1M context)"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"},"transcript_path":"%s"}' "$TRANSCRIPT" | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
+if echo "$HUD_OUT" | grep -qE '118k/1m context([^[:alnum:]]|$)'; then
+  PASS=$((PASS + 1)); echo "PASS: t1d2: 1M tier label ($HUD_OUT)"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1d2: expected '118k/1m context', got: $HUD_OUT"
+fi
+
+# --- t1e: usage cache file is read and percentages rendered ---
+CACHE="$WORK/usage-cache.json"
+cat > "$CACHE" <<'JSON'
+{"data":{"fiveHourPercent":42,"fiveHourResetsAt":"2030-01-01T00:00:00.000Z","weeklyPercent":75,"weeklyResetsAt":"2030-01-08T00:00:00.000Z"}}
+JSON
+HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE="$CACHE" "$PROJ/.claude/scripts/statusline.sh")
+# After update: percentages are bare (no "5h:"/"w:" prefix), with elapsed/window in parens.
+if echo "$HUD_OUT" | grep -qE '42%.*\(.*/5h\)' && echo "$HUD_OUT" | grep -qE '75%.*\(.*/7d\)'; then
+  PASS=$((PASS + 1)); echo "PASS: t1e: 5h and weekly limits rendered with elapsed/window"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1e: expected '42% (.../5h)' and '75% (.../7d)', got: $HUD_OUT"
+fi
+
+# --- t1e2: color codes embedded around percentage values ---
+if echo "$HUD_OUT" | grep -qE $'\033\\[3[123]m'; then
+  PASS=$((PASS + 1)); echo "PASS: t1e2: ANSI color codes present in usage section"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1e2: no ANSI color escapes found in: $HUD_OUT"
+fi
+
+# --- t1f: no usage cache → dim "??%" placeholders rendered (not omitted) ---
+HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
+if echo "$HUD_OUT" | grep -qE '\?\?%.*5h' && echo "$HUD_OUT" | grep -qE '\?\?%.*7d'; then
+  PASS=$((PASS + 1)); echo "PASS: t1f: placeholder usage rendered when cache absent"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1f: expected '??% ... 5h' and '??% ... 7d' placeholders, got: $HUD_OUT"
+fi
+
+# --- t1g: no transcript → dim "??? turns" + "???k/? context" placeholders ---
+HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
+if echo "$HUD_OUT" | grep -q '??? turns' && echo "$HUD_OUT" | grep -q '???k/? context'; then
+  PASS=$((PASS + 1)); echo "PASS: t1g: placeholder turns + context rendered when transcript absent"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1g: expected '??? turns' + '???k/? context', got: $HUD_OUT"
 fi
 
 # --- t2: idempotent re-run does not overwrite ---

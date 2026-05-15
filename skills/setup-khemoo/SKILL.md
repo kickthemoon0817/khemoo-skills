@@ -27,13 +27,7 @@ Idempotent — never overwrites existing files. Reports which files were written
 
 `<root>` is the git toplevel, or `$PWD` if not inside a git repo.
 
-The HUD renders as a one-liner via Claude Code's `statusLine` mechanism:
-
-```
-<model> · <project> · <session-short> · <N turns>
-```
-
-Fields are pulled from the status JSON payload (`model.display_name`, `session_id`, `workspace.current_dir`) plus a transcript-line-count for the turn estimate. The script is dependency-free bash (no `jq` required) and its absolute path is baked into `settings.json` at install time so it resolves regardless of cwd.
+The HUD is wired up via Claude Code's `statusLine` setting. The script is dependency-free bash; its absolute path is baked into `settings.json` at install time so it resolves regardless of cwd. Internals documented inline in `assets/statusline.sh`.
 
 ### Agent stack
 
