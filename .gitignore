@@ -10,3 +10,4 @@ Thumbs.db
 .claude/
 *-workspace/
 skills/*/evals/
+tmp/

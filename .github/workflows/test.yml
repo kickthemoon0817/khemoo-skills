@@ -27,7 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           docker run --rm -v "$PWD:/workdir" davidanson/markdownlint-cli2:v0.13.0 \
-            "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**"
+            "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**" "!tmp/**"
 
       - name: Discover and run all skills/*/scripts/test-*.sh
         run: |

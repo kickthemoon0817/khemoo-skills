@@ -49,7 +49,7 @@ fi
 if [ "$skip_md" -eq 0 ]; then
   echo "=== markdownlint (pinned davidanson/markdownlint-cli2:v0.13.0) ==="
   docker run --rm -v "$PWD:/workdir" davidanson/markdownlint-cli2:v0.13.0 \
-    "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**"
+    "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**" "!tmp/**"
   echo "markdownlint OK"
   echo
 fi
