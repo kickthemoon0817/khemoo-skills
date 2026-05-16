@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.70] — 2026-05-16
+
+- setup-khemoo: added `usage-fetch.sh`, a self-sufficient fetcher for the HUD's 5h/weekly usage caps. It reads OAuth credentials from the macOS Keychain (`Claude Code-credentials`) or `~/.claude/.credentials.json`, refreshes the access token via `platform.claude.com` when expired, calls `api.anthropic.com/api/oauth/usage`, and writes `~/.claude/usage-cache.json`. `statusline.sh` spawns it in the background (single-flight lock, 120s freshness gate) so the HUD shows live caps with no external tool dependency and no render-blocking. Dependency-free: bash + curl + `security`. `setup.sh` installs it alongside the statusline; `$USAGE_FETCH` empty disables the spawn, `$USAGE_CREDENTIALS_FILE` overrides the credential source. test-setup.sh: 24 → 28 cases (fetcher install, no-credentials exit, lock contention). markdownlint/git now exclude the `tmp/` scratch dir.
+
 ## [0.1.69] — 2026-05-15
 
 - setup-khemoo HUD now surfaces usage caps and current context inline. Render: `<model> · <project> NN% (Xh Ym/5h) NN% (Xd Yh/7d) · <session> · <N turns> · <X>k/<limit> context`. Percentages colored green/yellow/red by threshold (50/80); width-stable padding (pct 4 chars, elapsed 6 chars) keeps the line steady as values change. Missing sources render gray `???`/`zzz` placeholders rather than dropping segments. Context tier is inferred from the model name (Opus → 1m) and auto-promoted when observed tokens exceed 200k. Usage cache lives at `~/.claude/usage-cache.json`; `$USAGE_CACHE` overrides. SKILL.md HUD section trimmed — internals documented inline in `assets/statusline.sh`. test-setup.sh: 18 → 24 cases (placeholders, color, width stability, tier detection).
