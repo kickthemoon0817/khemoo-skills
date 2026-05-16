@@ -2,6 +2,10 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [0.1.71] — 2026-05-16
+
+- setup-khemoo HUD: the main line drops the `turns` field — it was `wc -l` of the transcript, which counts every event record (messages, hooks, attachments, tool calls…) and ran ~7x inflated over real exchanges. In its place, `$HUD_DETAIL` (any non-empty value) enables a second gray line with an honest event breakdown: `N msgs · N tools · N hooks · N attach`, tallied across all `"type"` occurrences in the transcript. Separators are now gray so the dividers recede behind the colored content; elapsed-time padding narrowed 6 → 5 chars so full-width durations (`5h00m`, `2d13h`) sit flush after `(`. test-setup.sh: 28 → 30 cases (detail line on/off), and the suite now neutralizes ambient `HUD_DETAIL`/`USAGE_FETCH` so runs are hermetic.
+
 ## [0.1.70] — 2026-05-16
 
 - setup-khemoo: added `usage-fetch.sh`, a self-sufficient fetcher for the HUD's 5h/weekly usage caps. It reads OAuth credentials from the macOS Keychain (`Claude Code-credentials`) or `~/.claude/.credentials.json`, refreshes the access token via `platform.claude.com` when expired, calls `api.anthropic.com/api/oauth/usage`, and writes `~/.claude/usage-cache.json`. `statusline.sh` spawns it in the background (single-flight lock, 120s freshness gate) so the HUD shows live caps with no external tool dependency and no render-blocking. Dependency-free: bash + curl + `security`. `setup.sh` installs it alongside the statusline; `$USAGE_FETCH` empty disables the spawn, `$USAGE_CREDENTIALS_FILE` overrides the credential source. test-setup.sh: 24 → 28 cases (fetcher install, no-credentials exit, lock contention). markdownlint/git now exclude the `tmp/` scratch dir.
