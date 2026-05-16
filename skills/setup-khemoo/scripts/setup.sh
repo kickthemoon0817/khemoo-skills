@@ -71,10 +71,14 @@ else
   CLAUDE_DIR="$TARGET/.claude"
 fi
 STATUSLINE_DST="$CLAUDE_DIR/scripts/statusline.sh"
+USAGE_FETCH_DST="$CLAUDE_DIR/scripts/usage-fetch.sh"
 SETTINGS_DST="$CLAUDE_DIR/settings.json"
 
 write_once "$ASSETS/statusline.sh" "$STATUSLINE_DST"
 chmod +x "$STATUSLINE_DST" 2>/dev/null || true
+
+write_once "$ASSETS/usage-fetch.sh" "$USAGE_FETCH_DST"
+chmod +x "$USAGE_FETCH_DST" 2>/dev/null || true
 
 # Settings template carries a @STATUSLINE_PATH@ placeholder; substitute the
 # absolute path before writing so the statusLine command resolves no matter

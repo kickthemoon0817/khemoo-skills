@@ -16,13 +16,12 @@
 # - The two percentages are the 5h and weekly Anthropic OAuth usage caps.
 #   Percentage is colored (green <50, yellow 50-80, red ≥80). The parens
 #   show elapsed-of-window time.
-# - Source for the percentages: a local JSON cache at
-#   ~/.claude/usage-cache.json with shape
-#     {"data": {"fiveHourPercent": N, "fiveHourResetsAt": "...",
-#               "weeklyPercent": N, "weeklyResetsAt": "..."}}
-#   Populated by any tool that does the OAuth fetch against the usage API.
-#   Override the path via $USAGE_CACHE. If the cache is absent the percentage
-#   portion is silently omitted.
+# - The percentages come from a local JSON cache at ~/.claude/usage-cache.json,
+#   refreshed by usage-fetch.sh (installed alongside this script). When the
+#   cache is missing or older than 120s, this script spawns usage-fetch.sh in
+#   the background — the current render is never blocked; the next one picks up
+#   fresh data. Override the cache path via $USAGE_CACHE and the fetcher path
+#   via $USAGE_FETCH (set $USAGE_FETCH empty to disable the spawn).
 
 set -uo pipefail
 
@@ -157,6 +156,21 @@ transcript=$(pull_str transcript_path)
 # work as an explicit override for tests and alternative setups.
 if [ -z "${USAGE_CACHE+x}" ]; then
   USAGE_CACHE="${HOME}/.claude/usage-cache.json"
+fi
+
+# Spawn a background refresh when the cache is missing or older than 120s, so
+# the next render has fresh data. Fire-and-forget — never blocks this render.
+if [ -z "${USAGE_FETCH+x}" ]; then
+  sl_dir=$(cd "$(dirname "$0")" 2>/dev/null && pwd)
+  USAGE_FETCH="${sl_dir}/usage-fetch.sh"
+fi
+if [ -n "$USAGE_FETCH" ] && [ -x "$USAGE_FETCH" ]; then
+  stale=1
+  if [ -f "$USAGE_CACHE" ]; then
+    cache_mtime=$(stat -f %m "$USAGE_CACHE" 2>/dev/null || stat -c %Y "$USAGE_CACHE" 2>/dev/null || echo 0)
+    [ "$(( $(date +%s) - cache_mtime ))" -lt 120 ] && stale=0
+  fi
+  [ "$stale" -eq 1 ] && ( USAGE_CACHE="$USAGE_CACHE" "$USAGE_FETCH" >/dev/null 2>&1 & )
 fi
 
 five_part=""

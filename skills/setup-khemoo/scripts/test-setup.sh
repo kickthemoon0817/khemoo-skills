@@ -8,6 +8,11 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETUP="$SCRIPT_DIR/setup.sh"
 
+# Disable the HUD's background usage-fetch spawn for every statusline.sh run
+# below — tests must never make network calls. usage-fetch.sh is exercised
+# directly (no-credentials and lock-held paths) in its own cases.
+export USAGE_FETCH=""
+
 PASS=0
 FAIL=0
 
@@ -60,6 +65,14 @@ if grep -q "$PROJ/.claude/scripts/statusline.sh" "$PROJ/.claude/settings.json"; 
   PASS=$((PASS + 1)); echo "PASS: t1b: settings.json statusLine points at the installed script"
 else
   FAIL=$((FAIL + 1)); echo "FAIL: t1b: settings.json statusLine path was not substituted"
+fi
+
+# --- t1b2: usage-fetch.sh is installed alongside statusline.sh, executable ---
+assert_file_exists "t1b2: usage-fetch.sh written" "$PROJ/.claude/scripts/usage-fetch.sh"
+if [ -x "$PROJ/.claude/scripts/usage-fetch.sh" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1b2: usage-fetch.sh is executable"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1b2: usage-fetch.sh is not executable"
 fi
 
 # --- t1c: statusline.sh produces a non-empty line on a minimal stub payload ---
@@ -126,6 +139,28 @@ if echo "$HUD_OUT" | grep -q '??? turns' && echo "$HUD_OUT" | grep -q '???k/? co
   PASS=$((PASS + 1)); echo "PASS: t1g: placeholder turns + context rendered when transcript absent"
 else
   FAIL=$((FAIL + 1)); echo "FAIL: t1g: expected '??? turns' + '???k/? context', got: $HUD_OUT"
+fi
+
+# --- t1h: usage-fetch.sh with no credentials exits 0 and writes no cache ---
+FETCH="$PROJ/.claude/scripts/usage-fetch.sh"
+FCACHE="$WORK/fetch-cache.json"
+USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE=/nonexistent "$FETCH"
+EXIT=$?
+if [ "$EXIT" -eq 0 ] && [ ! -f "$FCACHE" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1h: usage-fetch.sh exits clean and writes nothing without credentials"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1h: expected exit 0 + no cache, got exit $EXIT"
+fi
+
+# --- t1i: usage-fetch.sh skips when another fetch holds the lock ---
+mkdir "${FCACHE}.lock"
+USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE=/nonexistent "$FETCH"
+EXIT=$?
+rmdir "${FCACHE}.lock" 2>/dev/null
+if [ "$EXIT" -eq 0 ] && [ ! -f "$FCACHE" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1i: usage-fetch.sh defers to a held lock"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1i: expected exit 0 + no cache with lock held, got exit $EXIT"
 fi
 
 # --- t2: idempotent re-run does not overwrite ---

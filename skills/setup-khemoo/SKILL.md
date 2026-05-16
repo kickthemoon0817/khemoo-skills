@@ -22,12 +22,13 @@ Idempotent — never overwrites existing files. Reports which files were written
 | `CLAUDE.md` (tactical reminders + leanness disciplines) | `<root>/CLAUDE.md` | `~/.claude/CLAUDE.md` |
 | Claude Code settings (with HUD `statusLine` wired up) | `<root>/.claude/settings.json` | `~/.claude/settings.json` |
 | HUD statusline script | `<root>/.claude/scripts/statusline.sh` | `~/.claude/scripts/statusline.sh` |
+| HUD usage fetcher | `<root>/.claude/scripts/usage-fetch.sh` | `~/.claude/scripts/usage-fetch.sh` |
 | `.editorconfig` | `<root>/.editorconfig` | — (project-only) |
 | `.markdownlint.json` | `<root>/.markdownlint.json` | — (project-only) |
 
 `<root>` is the git toplevel, or `$PWD` if not inside a git repo.
 
-The HUD is wired up via Claude Code's `statusLine` setting. The script is dependency-free bash; its absolute path is baked into `settings.json` at install time so it resolves regardless of cwd. Internals documented inline in `assets/statusline.sh`.
+The HUD is wired up via Claude Code's `statusLine` setting. `statusline.sh` renders the line; `usage-fetch.sh` refreshes the Anthropic usage caps it displays (5h + weekly), reading OAuth credentials from the macOS Keychain or `~/.claude/.credentials.json`. Both are dependency-free bash; the statusline path is baked into `settings.json` at install time so it resolves regardless of cwd. Internals documented inline in each script.
 
 ### Agent stack
 
