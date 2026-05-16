@@ -4,15 +4,18 @@
 # Dependency-free: uses bash + grep + sed + date only.
 #
 # Renders (opportunistically, fields drop when their source is missing):
-#   <model> · <project> NN% (1h30m/5h) NN% (3d/7d) · <session> · <N turns> · <X>k/<limit> context
+#   <model> · <project> NN% (1h30m/5h) NN% (3d/7d) · <session> · <X>k/<limit> context
+#
+# With $HUD_DETAIL set to a non-empty value, a second gray line follows with a
+# transcript-event breakdown: messages, tool calls, hooks, attachments.
 #
 # Percentages glue onto the project segment with a single space so the budget
 # state reads as part of "where am I working".
 #
-# - turns + context come from the transcript file: input_tokens +
+# - context comes from the transcript file: input_tokens +
 #   cache_creation_input_tokens + cache_read_input_tokens from the last
 #   assistant message's usage block. Limit is "1m" if the model display name
-#   contains "1M", else "200k".
+#   contains "1M" or "Opus", else "200k".
 # - The two percentages are the 5h and weekly Anthropic OAuth usage caps.
 #   Percentage is colored (green <50, yellow 50-80, red ≥80). The parens
 #   show elapsed-of-window time.
@@ -61,8 +64,10 @@ iso_to_epoch() {
 }
 
 human_duration() {
-  # $1 = seconds. Returns a 6-char right-aligned string so caller fields don't
-  # jitter as values change. Forms: 5h17m, 3d04h, 23h59m, 42m (all padded to 6).
+  # $1 = seconds. Right-aligns to 5 chars — the common full width (5h00m,
+  # 2d13h) — so full-width values sit flush after "(" while short ones (42m)
+  # still left-pad to stay aligned. The rare 6-char form (e.g. 23h59m) prints
+  # as-is.
   local s="$1"
   [ -z "$s" ] && return
   local val
@@ -80,7 +85,7 @@ human_duration() {
       val=$(printf '%dm' "$m")
     fi
   fi
-  printf '%6s' "$val"
+  printf '%5s' "$val"
 }
 
 RED=$'\033[31m'
@@ -89,15 +94,18 @@ GREEN=$'\033[32m'
 GRAY=$'\033[90m'
 RESET=$'\033[0m'
 
+# Major-segment separator — gray so the dividers recede and the colored
+# content (model, usage, context) stands out.
+SEP=" ${GRAY}·${RESET} "
+
 # Placeholders for missing data — rendered in gray so they read as "no signal
 # yet" rather than real values. Width matches the populated version so the
 # HUD doesn't jitter when a source comes and goes. Using \033[90m (bright
 # black) instead of \033[2m (dim) because dim renders invisible in many
 # terminal themes.
-PH_TURNS="${GRAY}??? turns${RESET}"
 PH_CONTEXT="${GRAY}???k/? context${RESET}"
-PH_FIVE="${GRAY} ??% (   zzz/5h)${RESET}"
-PH_WEEK="${GRAY} ??% (   zzz/7d)${RESET}"
+PH_FIVE="${GRAY} ??% (  zzz/5h)${RESET}"
+PH_WEEK="${GRAY} ??% (  zzz/7d)${RESET}"
 
 color_for_pct() {
   # Return an ANSI escape based on threshold: green <50, yellow 50-80, red ≥80.
@@ -189,19 +197,13 @@ fi
 # Glue the percentages onto the project segment with a single space.
 project_segment="${project} ${five_part} ${week_part}"
 
-parts="${model:-?} · ${project_segment} · ${session:-?}"
+parts="${model:-?}${SEP}${project_segment}${SEP}${session:-?}"
 
-# Turns + context from the transcript, with dim placeholders when missing.
-turns_part="$PH_TURNS"
+# Current context from the transcript, with a gray placeholder when missing.
 context_part="$PH_CONTEXT"
 if [ -n "$transcript" ] && [ -f "$transcript" ]; then
-  turns=$(wc -l < "$transcript" 2>/dev/null | tr -d ' ')
-  if [ -n "$turns" ] && [ "$turns" -gt 0 ] 2>/dev/null; then
-    turns_part="${turns} turns"
-  fi
-
-  # Current context: sum of input + cache_creation + cache_read tokens from
-  # the last assistant message's usage block.
+  # Sum input + cache_creation + cache_read tokens from the last assistant
+  # message's usage block.
   last_usage_lineno=$(grep -nE '"input_tokens"[[:space:]]*:' "$transcript" 2>/dev/null \
     | tail -1 \
     | cut -d: -f1)
@@ -228,6 +230,29 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
     fi
   fi
 fi
-parts="${parts} · ${turns_part} · ${context_part}"
+parts="${parts}${SEP}${context_part}"
+
+# Optional detail line: a gray transcript-event breakdown. Tallies every
+# "type":"..." occurrence — message/hook types sit at the record's top level,
+# tool_use/attachment types are nested inside records, so all matches per line
+# are counted. Emitted only when $HUD_DETAIL is non-empty.
+if [ -n "${HUD_DETAIL:-}" ] && [ -n "$transcript" ] && [ -f "$transcript" ]; then
+  detail=$(awk '
+    {
+      s = $0
+      while (match(s, /"type":"[^"]*"/)) {
+        t = substr(s, RSTART, RLENGTH)
+        gsub(/"type":"|"/, "", t)
+        c[t]++
+        s = substr(s, RSTART + RLENGTH)
+      }
+    }
+    END {
+      msgs = c["user"] + c["assistant"]
+      hooks = c["hook_success"] + c["hook_additional_context"]
+      printf "%d msgs · %d tools · %d hooks · %d attach", msgs, c["tool_use"], hooks, c["attachment"]
+    }' "$transcript" 2>/dev/null)
+  [ -n "$detail" ] && parts="${parts}"$'\n'"${GRAY}${detail}${RESET}"
+fi
 
 printf '%s' "$parts"

@@ -8,10 +8,13 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETUP="$SCRIPT_DIR/setup.sh"
 
-# Disable the HUD's background usage-fetch spawn for every statusline.sh run
-# below — tests must never make network calls. usage-fetch.sh is exercised
-# directly (no-credentials and lock-held paths) in its own cases.
+# Neutralize ambient HUD env so every statusline.sh run below is hermetic
+# regardless of the caller's environment:
+#  - USAGE_FETCH="" disables the background usage-fetch spawn (no network);
+#    usage-fetch.sh is exercised directly in its own cases.
+#  - HUD_DETAIL="" keeps the optional detail line off unless a case opts in.
 export USAGE_FETCH=""
+export HUD_DETAIL=""
 
 PASS=0
 FAIL=0
@@ -133,12 +136,36 @@ else
   FAIL=$((FAIL + 1)); echo "FAIL: t1f: expected '??% ... 5h' and '??% ... 7d' placeholders, got: $HUD_OUT"
 fi
 
-# --- t1g: no transcript → dim "??? turns" + "???k/? context" placeholders ---
+# --- t1g: no transcript → gray "???k/? context" placeholder ---
 HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
-if echo "$HUD_OUT" | grep -q '??? turns' && echo "$HUD_OUT" | grep -q '???k/? context'; then
-  PASS=$((PASS + 1)); echo "PASS: t1g: placeholder turns + context rendered when transcript absent"
+if echo "$HUD_OUT" | grep -q '???k/? context'; then
+  PASS=$((PASS + 1)); echo "PASS: t1g: placeholder context rendered when transcript absent"
 else
-  FAIL=$((FAIL + 1)); echo "FAIL: t1g: expected '??? turns' + '???k/? context', got: $HUD_OUT"
+  FAIL=$((FAIL + 1)); echo "FAIL: t1g: expected '???k/? context', got: $HUD_OUT"
+fi
+
+# --- t1j: HUD_DETAIL on → optional second line with the event breakdown ---
+DTRANSCRIPT="$WORK/detail.jsonl"
+cat > "$DTRANSCRIPT" <<'JSONL'
+{"type":"user","message":{"role":"user"}}
+{"type":"assistant","message":{"role":"assistant"}}
+{"type":"tool_use"}
+{"type":"hook_success"}
+{"type":"attachment"}
+JSONL
+HUD_OUT=$(printf '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"},"transcript_path":"%s"}' "$DTRANSCRIPT" | USAGE_CACHE=/nonexistent HUD_DETAIL=1 "$PROJ/.claude/scripts/statusline.sh")
+if printf '%s' "$HUD_OUT" | grep -q '2 msgs' && printf '%s' "$HUD_OUT" | grep -q '1 tools'; then
+  PASS=$((PASS + 1)); echo "PASS: t1j: HUD_DETAIL renders the event-breakdown line"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1j: expected '2 msgs' + '1 tools' detail line, got: $HUD_OUT"
+fi
+
+# --- t1k: HUD_DETAIL unset → no detail line ---
+HUD_OUT=$(printf '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"},"transcript_path":"%s"}' "$DTRANSCRIPT" | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
+if printf '%s' "$HUD_OUT" | grep -q 'msgs'; then
+  FAIL=$((FAIL + 1)); echo "FAIL: t1k: detail line should be absent without HUD_DETAIL, got: $HUD_OUT"
+else
+  PASS=$((PASS + 1)); echo "PASS: t1k: no detail line when HUD_DETAIL unset"
 fi
 
 # --- t1h: usage-fetch.sh with no credentials exits 0 and writes no cache ---
