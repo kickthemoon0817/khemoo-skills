@@ -10,6 +10,7 @@
 
 set -uo pipefail
 
+# === arguments ===
 SCOPE="project"
 for arg in "$@"; do
   case "$arg" in
@@ -27,8 +28,10 @@ for arg in "$@"; do
   esac
 done
 
+# === paths & target scope ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ASSETS="$(cd "$SCRIPT_DIR/.." && pwd)/assets"
+CLAUDE_ASSETS="$ASSETS/claude"
 
 if [ "$SCOPE" = "user" ]; then
   TARGET="${HOME}/.claude"
@@ -37,6 +40,7 @@ else
   TARGET="${ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 fi
 
+# === helpers ===
 wrote=0
 skipped=0
 
@@ -56,15 +60,17 @@ write_once() {
 echo "Scope: $SCOPE (target: $TARGET)"
 echo
 
-# CLAUDE.md at the root of the target scope.
+# === CLAUDE.md ===
+# Root-level CLAUDE.md for the target scope.
 if [ "$SCOPE" = "user" ]; then
   write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
 else
   write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
 fi
 
-# HUD statusline script + Claude Code settings (statusLine wired to absolute
-# script path so it works regardless of cwd at runtime).
+# === HUD: statusline + usage fetcher + settings ===
+# statusLine is wired to the absolute installed script path so it resolves
+# regardless of the cwd Claude Code runs from.
 if [ "$SCOPE" = "user" ]; then
   CLAUDE_DIR="$TARGET"
 else
@@ -74,10 +80,10 @@ STATUSLINE_DST="$CLAUDE_DIR/scripts/statusline.sh"
 USAGE_FETCH_DST="$CLAUDE_DIR/scripts/usage-fetch.sh"
 SETTINGS_DST="$CLAUDE_DIR/settings.json"
 
-write_once "$ASSETS/statusline.sh" "$STATUSLINE_DST"
+write_once "$CLAUDE_ASSETS/statusline.sh" "$STATUSLINE_DST"
 chmod +x "$STATUSLINE_DST" 2>/dev/null || true
 
-write_once "$ASSETS/usage-fetch.sh" "$USAGE_FETCH_DST"
+write_once "$CLAUDE_ASSETS/usage-fetch.sh" "$USAGE_FETCH_DST"
 chmod +x "$USAGE_FETCH_DST" 2>/dev/null || true
 
 # Settings template carries a @STATUSLINE_PATH@ placeholder; substitute the
@@ -85,7 +91,7 @@ chmod +x "$USAGE_FETCH_DST" 2>/dev/null || true
 # what cwd Claude Code runs from.
 if [ ! -e "$SETTINGS_DST" ]; then
   mkdir -p "$(dirname "$SETTINGS_DST")"
-  sed "s|@STATUSLINE_PATH@|$STATUSLINE_DST|g" "$ASSETS/settings.json" > "$SETTINGS_DST"
+  sed "s|@STATUSLINE_PATH@|$STATUSLINE_DST|g" "$CLAUDE_ASSETS/settings.json" > "$SETTINGS_DST"
   echo "wrote: $SETTINGS_DST"
   wrote=$((wrote + 1))
 else
@@ -93,22 +99,23 @@ else
   skipped=$((skipped + 1))
 fi
 
-# Project-only files (editor/lint configs don't make sense at user scope).
+# === editor & lint config (project scope only) ===
 if [ "$SCOPE" = "project" ]; then
   write_once "$ASSETS/editorconfig"      "$TARGET/.editorconfig"
   write_once "$ASSETS/markdownlint.json" "$TARGET/.markdownlint.json"
 fi
 
-# Agent stack.
+# === agent stack ===
 if [ "$SCOPE" = "user" ]; then
   AGENT_DIR="$TARGET/agents"
 else
   AGENT_DIR="$TARGET/.claude/agents"
 fi
-for agent in "$ASSETS"/agents/*.md; do
+for agent in "$CLAUDE_ASSETS"/agents/*.md; do
   name=$(basename "$agent")
   write_once "$agent" "$AGENT_DIR/$name"
 done
 
+# === report ===
 echo
 echo "Setup complete: $wrote written, $skipped skipped."
