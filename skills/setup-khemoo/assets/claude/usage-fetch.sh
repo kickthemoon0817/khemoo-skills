@@ -3,10 +3,10 @@
 #
 # Reads OAuth credentials, refreshes the access token when expired, calls the
 # usage API, and writes ~/.claude/usage-cache.json for statusline.sh to render.
-# Dependency-free: bash + curl + date + grep/sed/awk, plus `security` (macOS
-# Keychain). Designed to be spawned in the background by statusline.sh — silent
-# on every failure so an absent network or missing credentials never disrupt
-# the HUD.
+# Dependency-free: bash + curl + date + grep/sed/awk + `security` — no
+# jq/python/node. Designed to be spawned in the background by statusline.sh —
+# silent on every failure so an absent network or missing credentials never
+# disrupt the HUD.
 #
 # Credentials are read from the macOS Keychain ("Claude Code-credentials"),
 # then ~/.claude/.credentials.json. Set $USAGE_CREDENTIALS_FILE to read from a
@@ -21,7 +21,7 @@ LOCK="${CACHE}.lock"
 
 mkdir -p "$(dirname "$CACHE")" 2>/dev/null || true
 
-# --- single-flight lock -----------------------------------------------------
+# === single-flight lock ===
 # mkdir is atomic; if the dir exists a fetch is already in flight. Reclaim a
 # lock older than 30s in case a prior run was killed before its cleanup.
 file_mtime() {
@@ -35,7 +35,7 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 fi
 trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
 
-# --- JSON field readers (flat objects only) ---------------------------------
+# === JSON field readers (flat objects only) ===
 json_str() {
   printf '%s' "$1" | grep -oE "\"$2\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" \
     | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/'
@@ -45,7 +45,7 @@ json_num() {
     | head -1 | grep -oE '[0-9]+$'
 }
 
-# --- read OAuth credentials -------------------------------------------------
+# === read OAuth credentials ===
 creds=""
 if [ -n "${USAGE_CREDENTIALS_FILE+x}" ]; then
   [ -f "$USAGE_CREDENTIALS_FILE" ] && creds=$(cat "$USAGE_CREDENTIALS_FILE" 2>/dev/null || true)
@@ -63,7 +63,7 @@ access_token=$(json_str "$creds" accessToken)
 refresh_token=$(json_str "$creds" refreshToken)
 expires_at=$(json_num "$creds" expiresAt)
 
-# --- refresh the access token when expired ----------------------------------
+# === refresh the access token when expired ===
 now_ms=$(( $(date +%s) * 1000 ))
 if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
   [ -z "$refresh_token" ] && exit 0
@@ -79,7 +79,7 @@ if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
 fi
 [ -z "$access_token" ] && exit 0
 
-# --- fetch usage ------------------------------------------------------------
+# === fetch usage ===
 usage=$(curl -fsS --max-time 10 \
   "https://api.anthropic.com/api/oauth/usage" \
   -H "Authorization: Bearer ${access_token}" \
@@ -87,7 +87,7 @@ usage=$(curl -fsS --max-time 10 \
   -H "Content-Type: application/json" 2>/dev/null || true)
 [ -z "$usage" ] && exit 0
 
-# --- parse ------------------------------------------------------------------
+# === parse ===
 # Each window is a flat object: {"utilization":N,"resets_at":"..."}.
 obj_for() {
   printf '%s' "$1" | grep -oE "\"$2\"[[:space:]]*:[[:space:]]*\{[^}]*\}" | head -1
@@ -119,7 +119,7 @@ five_reset=$(iso_of "$five")
 week_pct=$(util_pct "$week")
 week_reset=$(iso_of "$week")
 
-# --- write cache atomically -------------------------------------------------
+# === write cache atomically ===
 tmp="${CACHE}.tmp.$$"
 cat > "$tmp" <<EOF
 {
