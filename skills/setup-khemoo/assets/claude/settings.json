@@ -1,8 +1,4 @@
 {
-  "permissions": {
-    "allow": [],
-    "deny": []
-  },
   "statusLine": {
     "type": "command",
     "command": "@STATUSLINE_PATH@"
