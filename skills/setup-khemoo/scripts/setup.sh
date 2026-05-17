@@ -60,14 +60,6 @@ write_once() {
 echo "Scope: $SCOPE (target: $TARGET)"
 echo
 
-# === CLAUDE.md ===
-# Root-level CLAUDE.md for the target scope.
-if [ "$SCOPE" = "user" ]; then
-  write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
-else
-  write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
-fi
-
 # === HUD: statusline + usage fetcher + settings ===
 # statusLine is wired to the absolute installed script path so it resolves
 # regardless of the cwd Claude Code runs from.
