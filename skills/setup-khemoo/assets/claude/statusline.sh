@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
-# setup-khemoo HUD — one-line status for Claude Code's statusLine.
-# Reads the status JSON payload from stdin, prints a single line to stdout.
-# Dependency-free: uses bash + grep + sed + date only.
+# setup-khemoo HUD — status line for Claude Code's statusLine.
+# Reads the status JSON payload from stdin, prints the HUD to stdout.
+# Dependency-free: bash + grep + sed + awk + date — no jq/python/node.
 #
 # Renders (opportunistically, fields drop when their source is missing):
-#   <model> · <project> NN% (1h30m/5h) NN% (3d/7d) · <session> · <X>k/<limit> context
+#   <model> · <project> · NN% (1h30m/5h) NN% (3d/7d) · <session> · <X>k/<limit> context
 #
 # With $HUD_DETAIL set to a non-empty value, a second gray line follows with a
 # transcript-event breakdown: messages, tool calls, hooks, attachments.
-#
-# Percentages glue onto the project segment with a single space so the budget
-# state reads as part of "where am I working".
 #
 # - context comes from the transcript file: input_tokens +
 #   cache_creation_input_tokens + cache_read_input_tokens from the last
@@ -64,34 +61,29 @@ iso_to_epoch() {
 }
 
 human_duration() {
-  # $1 = seconds. Right-aligns to 5 chars — the common full width (5h00m,
-  # 2d13h) — so full-width values sit flush after "(" while short ones (42m)
-  # still left-pad to stay aligned. The rare 6-char form (e.g. 23h59m) prints
-  # as-is.
+  # $1 = seconds. Compact natural-width form: 42m, 5h17m, 3d04h.
   local s="$1"
   [ -z "$s" ] && return
-  local val
   if [ "$s" -le 0 ] 2>/dev/null; then
-    val="0m"
-  else
-    local h=$((s / 3600))
-    local m=$(((s % 3600) / 60))
-    local d=$((h / 24))
-    if [ "$d" -gt 0 ]; then
-      val=$(printf '%dd%02dh' "$d" "$((h % 24))")
-    elif [ "$h" -gt 0 ]; then
-      val=$(printf '%dh%02dm' "$h" "$m")
-    else
-      val=$(printf '%dm' "$m")
-    fi
+    printf '0m'
+    return
   fi
-  printf '%5s' "$val"
+  local h=$((s / 3600))
+  local m=$(((s % 3600) / 60))
+  local d=$((h / 24))
+  if [ "$d" -gt 0 ]; then
+    printf '%dd%02dh' "$d" "$((h % 24))"
+  elif [ "$h" -gt 0 ]; then
+    printf '%dh%02dm' "$h" "$m"
+  else
+    printf '%dm' "$m"
+  fi
 }
 
 RED=$'\033[31m'
 YELLOW=$'\033[33m'
 GREEN=$'\033[32m'
-GRAY=$'\033[90m'
+GRAY=$'\033[90m'  # bright black — avoid dim (\033[2m), invisible in many themes
 RESET=$'\033[0m'
 
 # Major-segment separator — gray so the dividers recede and the colored
@@ -99,13 +91,10 @@ RESET=$'\033[0m'
 SEP=" ${GRAY}·${RESET} "
 
 # Placeholders for missing data — rendered in gray so they read as "no signal
-# yet" rather than real values. Width matches the populated version so the
-# HUD doesn't jitter when a source comes and goes. Using \033[90m (bright
-# black) instead of \033[2m (dim) because dim renders invisible in many
-# terminal themes.
+# yet" rather than real values.
 PH_CONTEXT="${GRAY}???k/? context${RESET}"
-PH_FIVE="${GRAY} ??% (  zzz/5h)${RESET}"
-PH_WEEK="${GRAY} ??% (  zzz/7d)${RESET}"
+PH_FIVE="${GRAY}??% (zzz/5h)${RESET}"
+PH_WEEK="${GRAY}??% (zzz/7d)${RESET}"
 
 color_for_pct() {
   # Return an ANSI escape based on threshold: green <50, yellow 50-80, red ≥80.
@@ -121,14 +110,11 @@ color_for_pct() {
 
 format_limit() {
   # $1 = percent, $2 = ISO reset time, $3 = window seconds, $4 = window label.
-  # Pads pct to 4 visible chars and elapsed to 6 chars so HUD width stays
-  # stable across value changes.
   local pct="$1" reset_iso="$2" window_secs="$3" window_label="$4"
   [ -z "$pct" ] && return
-  local color pct_str
+  local color
   color=$(color_for_pct "$pct")
-  pct_str=$(printf '%3d%%' "$pct")
-  local out="${color}${pct_str}${RESET}"
+  local out="${color}${pct}%${RESET}"
   if [ -n "$reset_iso" ] && [ -n "$window_secs" ]; then
     local now reset elapsed
     now=$(date +%s)
@@ -194,10 +180,10 @@ fi
 [ -z "$five_part" ] && five_part="$PH_FIVE"
 [ -z "$week_part" ] && week_part="$PH_WEEK"
 
-# Glue the percentages onto the project segment with a single space.
-project_segment="${project} ${five_part} ${week_part}"
+# The two percentages share one segment, space-joined.
+usage_segment="${five_part} ${week_part}"
 
-parts="${model:-?}${SEP}${project_segment}${SEP}${session:-?}"
+parts="${model:-?}${SEP}${project}${SEP}${usage_segment}${SEP}${session:-?}"
 
 # Current context from the transcript, with a gray placeholder when missing.
 context_part="$PH_CONTEXT"
