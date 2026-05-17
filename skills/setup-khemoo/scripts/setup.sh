@@ -105,17 +105,6 @@ if [ "$SCOPE" = "project" ]; then
   write_once "$ASSETS/markdownlint.json" "$TARGET/.markdownlint.json"
 fi
 
-# === agent stack ===
-if [ "$SCOPE" = "user" ]; then
-  AGENT_DIR="$TARGET/agents"
-else
-  AGENT_DIR="$TARGET/.claude/agents"
-fi
-for agent in "$CLAUDE_ASSETS"/agents/*.md; do
-  name=$(basename "$agent")
-  write_once "$agent" "$AGENT_DIR/$name"
-done
-
 # === report ===
 echo
 echo "Setup complete: $wrote written, $skipped skipped."
