@@ -10,7 +10,7 @@ jobs:
     name: Run skill regression tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Shellcheck all skills/*/scripts/*.sh (pinned via Docker)
         run: |
