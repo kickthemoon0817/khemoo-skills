@@ -4,31 +4,19 @@ The standard for how AI agents collaborate in this project.
 
 ## Major premise
 
-Any substantial task is divided by **domain of expertise**, and each domain is handed to the agent that owns it. The main agent orchestrates: it handles trivial work directly, delegates substantial or specialized work to the domain's owner, and **never approves its own output**.
-
-Operation is supervised, not fire-and-forget. While an agent works, the orchestrator watches its direction and keeps intervention open — redirect mid-course when the work drifts off-goal, rather than waiting for a finished result to reject. Review is dispatched selectively — at the checkpoints and on the parts that warrant it — and always to an agent that did not produce the work; authoring and review never share a context.
-
-Each agent is **dual-purpose**: it *operates* in its domain (does the work) and *reviews* in its domain (judges another agent's work).
-
-## The agent stack
-
-Delegate to the agent whose domain the task falls in:
-
-- **code-reviewer** — logic correctness, architecture, API contracts, backwards compatibility
-- **security-reviewer** — the OWASP Top 10: injection, auth, secrets, trust boundaries
-- **quality-reviewer** — naming, patterns, anti-patterns, dead code, DRY
-- **test-engineer** — coverage, edge cases, test quality and determinism
-- **designer** — UI/UX, accessibility, responsive states, visual design
-- **build-fixer** — CI/CD, Dockerfiles, infrastructure config
-- **writer** — documentation accuracy, public-API doc coverage
+1. A separate agent is spawned only for what a single context cannot provide — **context isolation**, **parallelism**, or **independent review**.
+2. The main agent orchestrates: it does trivial work directly and delegates substantial or self-contained chunks to fresh agents.
+3. A delegated agent's **task** defines what it does; it reports back a brief result — what was done and what the orchestrator needs to continue, not its full working context.
+4. The orchestrator **never approves its own output** — authoring and review are separate passes, in separate contexts.
 
 ## How to collaborate
 
-1. **Scope first.** For anything non-trivial, understand the task before acting.
-2. **Delegate, then supervise.** Hand specialized work to its domain owner; watch the direction as it proceeds and redirect mid-course if it drifts.
-3. **Review selectively.** A domain agent that did not produce the work reviews it — at the checkpoints and on the parts that warrant it, not only at the end.
-4. **Verify before "done".** Produce evidence the work holds — tests, a build, a check against the source. "Should work" is not "works".
-5. **Parallelize.** Independent domains with no shared state run concurrently.
+1. **Trivial work, direct.** Delegation has a cost; small in-context edits don't earn a separate agent.
+2. **Delegate when it pays off** — to isolate context, to parallelize, or to get an independent reviewer.
+3. **Brief the fresh agent.** A delegated agent sees none of the orchestrator's context. Give it a self-contained briefing — one explicit, simple goal; the standards to follow; a brief of the task; and the core context — and nothing more.
+4. **Supervise.** Watch a delegated agent's direction as it works; redirect mid-course if it drifts off-goal.
+5. **Review separately.** A non-producer judges the work — selectively, at the checkpoints and on the parts that warrant it. No self-approval.
+6. **Verify before "done".** Produce evidence the work holds; "should work" is not "works".
 
 ## Working disciplines
 
