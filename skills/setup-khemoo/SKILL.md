@@ -1,6 +1,6 @@
 ---
 name: setup-khemoo
-description: Use whenever the user wants to bootstrap a project (or their user-global Claude config) for AI collaboration — sets up `CLAUDE.md`, `.claude/settings.json`, `.editorconfig`, `.markdownlint.json`, and a curated agent stack at `.claude/agents/`. Triggers on "set up this project for Claude", "bootstrap CLAUDE.md", "install the agent stack", "/setup-khemoo", or when the user starts a new project that needs the standard scaffolding. Invoke even when the user phrases the ask casually ("get this repo Claude-ready", "drop in the usual configs").
+description: Use whenever the user wants to bootstrap a project (or their user-global Claude config) for AI collaboration — sets up the `AGENTS.md`/`CLAUDE.md` instruction templates, `.claude/settings.json` with a HUD statusline, `.editorconfig`, and `.markdownlint.json`. Triggers on "set up this project for Claude", "bootstrap AGENTS.md", "/setup-khemoo", or when the user starts a new project that needs the standard scaffolding. Invoke even when the user phrases the ask casually ("get this repo Claude-ready", "drop in the usual configs").
 ---
 
 # Project + user-config bootstrap for AI collaboration
@@ -19,7 +19,8 @@ Idempotent — never overwrites existing files. Reports which files were written
 
 | File | `--project` (default) | `--user` |
 |---|---|---|
-| `CLAUDE.md` (tactical reminders + leanness disciplines) | `<root>/CLAUDE.md` | `~/.claude/CLAUDE.md` |
+| `AGENTS.md` (canonical agent instructions) | `<root>/AGENTS.md` | `~/.claude/AGENTS.md` |
+| `CLAUDE.md` (imports `AGENTS.md` via `@AGENTS.md`) | `<root>/CLAUDE.md` | `~/.claude/CLAUDE.md` |
 | Claude Code settings (with HUD `statusLine` wired up) | `<root>/.claude/settings.json` | `~/.claude/settings.json` |
 | HUD statusline script | `<root>/.claude/scripts/statusline.sh` | `~/.claude/scripts/statusline.sh` |
 | HUD usage fetcher | `<root>/.claude/scripts/usage-fetch.sh` | `~/.claude/scripts/usage-fetch.sh` |
@@ -30,24 +31,9 @@ Idempotent — never overwrites existing files. Reports which files were written
 
 The HUD is wired up via Claude Code's `statusLine` setting. `statusline.sh` renders the line; `usage-fetch.sh` refreshes the Anthropic usage caps it displays (5h + weekly), reading OAuth credentials from the macOS Keychain or `~/.claude/.credentials.json`. Both are dependency-free bash; the statusline path is baked into `settings.json` at install time so it resolves regardless of cwd. Internals documented inline in each script.
 
-### Agent stack
+### Instruction templates
 
-A curated set of subagent configs that match `vc-khemoo`'s Stage 3 reviewer roster. Written to:
-
-- `<root>/.claude/agents/<name>.md` for `--project`
-- `~/.claude/agents/<name>.md` for `--user`
-
-Agents installed:
-
-- `code-reviewer` — logic, architecture, API contracts, backwards compatibility
-- `security-reviewer` — OWASP-Top-10 surface
-- `quality-reviewer` — naming, patterns, anti-patterns
-- `test-engineer` — coverage, edge cases, test quality
-- `designer` — UI/UX + visual design
-- `build-fixer` — CI/CD, Dockerfiles, infra
-- `writer` — docs clarity, API docs
-
-The agent files are minimal identity stubs; role-specific briefs for each reviewer live in `vc-khemoo`'s reference files and are loaded at dispatch time.
+`AGENTS.md` is the canonical agent-instruction file; `CLAUDE.md` is a one-line stub that imports it via `@AGENTS.md`, so Claude Code and Codex load the same content. Both land at the target root (or `~/.claude/` for `--user`) so the relative import resolves.
 
 ## Operational rules
 
