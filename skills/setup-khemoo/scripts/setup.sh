@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup-khemoo setup — scaffolds Claude workspace files + agent stack.
+# setup-khemoo setup — scaffolds AI instruction templates + Claude workspace files.
 # Idempotent: never overwrites existing files.
 #
 # Usage:
@@ -60,13 +60,12 @@ write_once() {
 echo "Scope: $SCOPE (target: $TARGET)"
 echo
 
-# === CLAUDE.md ===
-# Root-level CLAUDE.md for the target scope.
-if [ "$SCOPE" = "user" ]; then
-  write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
-else
-  write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
-fi
+# === AI instruction templates ===
+# AGENTS.md is the canonical instruction file; CLAUDE.md imports it via
+# @AGENTS.md so Claude Code and Codex load the same content. Both land at the
+# target root so the relative import resolves.
+write_once "$ASSETS/AGENTS.md" "$TARGET/AGENTS.md"
+write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
 
 # === HUD: statusline + usage fetcher + settings ===
 # statusLine is wired to the absolute installed script path so it resolves
@@ -104,17 +103,6 @@ if [ "$SCOPE" = "project" ]; then
   write_once "$ASSETS/editorconfig"      "$TARGET/.editorconfig"
   write_once "$ASSETS/markdownlint.json" "$TARGET/.markdownlint.json"
 fi
-
-# === agent stack ===
-if [ "$SCOPE" = "user" ]; then
-  AGENT_DIR="$TARGET/agents"
-else
-  AGENT_DIR="$TARGET/.claude/agents"
-fi
-for agent in "$CLAUDE_ASSETS"/agents/*.md; do
-  name=$(basename "$agent")
-  write_once "$agent" "$AGENT_DIR/$name"
-done
 
 # === report ===
 echo

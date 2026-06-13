@@ -50,12 +50,11 @@ mkdir -p "$PROJ"
 ROOT="$PROJ" "$SETUP" >/dev/null 2>&1
 EXIT=$?
 assert_eq "t1: project setup exits 0" 0 "$EXIT"
+assert_file_exists "t1: AGENTS.md written" "$PROJ/AGENTS.md"
 assert_file_exists "t1: CLAUDE.md written" "$PROJ/CLAUDE.md"
 assert_file_exists "t1: .claude/settings.json written" "$PROJ/.claude/settings.json"
 assert_file_exists "t1: .editorconfig written" "$PROJ/.editorconfig"
 assert_file_exists "t1: .markdownlint.json written" "$PROJ/.markdownlint.json"
-assert_file_exists "t1: code-reviewer agent written" "$PROJ/.claude/agents/code-reviewer.md"
-assert_file_exists "t1: writer agent written" "$PROJ/.claude/agents/writer.md"
 
 # --- t1b: HUD statusline.sh is written, executable, and absolute path is baked into settings.json ---
 assert_file_exists "t1b: statusline.sh written" "$PROJ/.claude/scripts/statusline.sh"
@@ -191,10 +190,10 @@ else
 fi
 
 # --- t2: idempotent re-run does not overwrite ---
-echo "custom-content" > "$PROJ/CLAUDE.md"
+echo "custom-content" > "$PROJ/.editorconfig"
 ROOT="$PROJ" "$SETUP" >/dev/null 2>&1
-got=$(cat "$PROJ/CLAUDE.md")
-assert_eq "t2: existing CLAUDE.md is not overwritten" "custom-content" "$got"
+got=$(cat "$PROJ/.editorconfig")
+assert_eq "t2: existing file is not overwritten" "custom-content" "$got"
 
 # --- t3: --user setup writes inside fake $HOME/.claude ---
 USER_HOME="$WORK/home"
@@ -202,9 +201,9 @@ mkdir -p "$USER_HOME"
 HOME="$USER_HOME" "$SETUP" --user >/dev/null 2>&1
 EXIT=$?
 assert_eq "t3: --user setup exits 0" 0 "$EXIT"
+assert_file_exists "t3: ~/.claude/AGENTS.md written" "$USER_HOME/.claude/AGENTS.md"
 assert_file_exists "t3: ~/.claude/CLAUDE.md written" "$USER_HOME/.claude/CLAUDE.md"
 assert_file_exists "t3: ~/.claude/settings.json written" "$USER_HOME/.claude/settings.json"
-assert_file_exists "t3: ~/.claude/agents/code-reviewer.md written" "$USER_HOME/.claude/agents/code-reviewer.md"
 
 # --- t4: --user scope does NOT write project-only files ---
 if [ -f "$USER_HOME/.claude/.editorconfig" ]; then
