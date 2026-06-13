@@ -50,6 +50,8 @@ mkdir -p "$PROJ"
 ROOT="$PROJ" "$SETUP" >/dev/null 2>&1
 EXIT=$?
 assert_eq "t1: project setup exits 0" 0 "$EXIT"
+assert_file_exists "t1: AGENTS.md written" "$PROJ/AGENTS.md"
+assert_file_exists "t1: CLAUDE.md written" "$PROJ/CLAUDE.md"
 assert_file_exists "t1: .claude/settings.json written" "$PROJ/.claude/settings.json"
 assert_file_exists "t1: .editorconfig written" "$PROJ/.editorconfig"
 assert_file_exists "t1: .markdownlint.json written" "$PROJ/.markdownlint.json"
@@ -199,6 +201,8 @@ mkdir -p "$USER_HOME"
 HOME="$USER_HOME" "$SETUP" --user >/dev/null 2>&1
 EXIT=$?
 assert_eq "t3: --user setup exits 0" 0 "$EXIT"
+assert_file_exists "t3: ~/.claude/AGENTS.md written" "$USER_HOME/.claude/AGENTS.md"
+assert_file_exists "t3: ~/.claude/CLAUDE.md written" "$USER_HOME/.claude/CLAUDE.md"
 assert_file_exists "t3: ~/.claude/settings.json written" "$USER_HOME/.claude/settings.json"
 
 # --- t4: --user scope does NOT write project-only files ---

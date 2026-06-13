@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup-khemoo setup — scaffolds Claude workspace files + agent stack.
+# setup-khemoo setup — scaffolds AI instruction templates + Claude workspace files.
 # Idempotent: never overwrites existing files.
 #
 # Usage:
@@ -59,6 +59,13 @@ write_once() {
 
 echo "Scope: $SCOPE (target: $TARGET)"
 echo
+
+# === AI instruction templates ===
+# AGENTS.md is the canonical instruction file; CLAUDE.md imports it via
+# @AGENTS.md so Claude Code and Codex load the same content. Both land at the
+# target root so the relative import resolves.
+write_once "$ASSETS/AGENTS.md" "$TARGET/AGENTS.md"
+write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
 
 # === HUD: statusline + usage fetcher + settings ===
 # statusLine is wired to the absolute installed script path so it resolves
