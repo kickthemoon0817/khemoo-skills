@@ -200,10 +200,10 @@ chmod +x "$STUB/curl"
 FCREDS="$WORK/fetch-creds.json"
 printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":9999999999999}' > "$FCREDS"
 touch -t 202001010000 "$FCACHE"
-before=$(stat -f %m "$FCACHE" 2>/dev/null || stat -c %Y "$FCACHE" 2>/dev/null)
+before=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
 PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
 EXIT=$?
-after=$(stat -f %m "$FCACHE" 2>/dev/null || stat -c %Y "$FCACHE" 2>/dev/null)
+after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
 if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
   PASS=$((PASS + 1)); echo "PASS: t1l: failed fetch advances cache mtime for backoff"
 else

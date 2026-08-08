@@ -26,7 +26,9 @@ mkdir -p "$(dirname "$CACHE")" 2>/dev/null || true
 # mkdir is atomic; if the dir exists a fetch is already in flight. Reclaim a
 # lock older than 30s in case a prior run was killed before its cleanup.
 file_mtime() {
-  stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0
+  # GNU stat first — BSD stat fails -c with clean stdout, but GNU stat -f
+  # prints a multi-line filesystem dump that poisons arithmetic callers.
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0
 }
 if ! mkdir "$LOCK" 2>/dev/null; then
   age=$(( $(date +%s) - $(file_mtime "$LOCK") ))
