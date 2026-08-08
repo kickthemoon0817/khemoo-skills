@@ -266,7 +266,8 @@ NOW=$(date +%s)
 PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
 EXIT=$?
 after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
-hdrs_left=$(ls "$FCACHE".hdrs.* 2>/dev/null | wc -l)
+hdrs_left=0
+for f in "$FCACHE".hdrs.*; do [ -e "$f" ] && hdrs_left=$((hdrs_left + 1)); done
 if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$((NOW + 100))" ] && [ "$hdrs_left" -eq 0 ]; then
   PASS=$((PASS + 1)); echo "PASS: t1l4: Retry-After sets a future cache mtime, no header dump left"
 else
