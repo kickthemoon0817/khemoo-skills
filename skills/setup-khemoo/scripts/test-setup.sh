@@ -189,6 +189,27 @@ else
   FAIL=$((FAIL + 1)); echo "FAIL: t1i: expected exit 0 + no cache with lock held, got exit $EXIT"
 fi
 
+# --- t1l: failed API fetch advances the cache mtime (retry backoff) ---
+# A curl stub forces the usage call to fail; valid-shaped unexpired creds get
+# the script past the credential stage. The advanced mtime is the backoff
+# signal that stops statusline.sh from respawning the fetcher every render.
+STUB="$WORK/stub-bin"
+mkdir -p "$STUB"
+printf '#!/bin/sh\nexit 22\n' > "$STUB/curl"
+chmod +x "$STUB/curl"
+FCREDS="$WORK/fetch-creds.json"
+printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":9999999999999}' > "$FCREDS"
+touch -t 202001010000 "$FCACHE"
+before=$(stat -f %m "$FCACHE" 2>/dev/null || stat -c %Y "$FCACHE" 2>/dev/null)
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(stat -f %m "$FCACHE" 2>/dev/null || stat -c %Y "$FCACHE" 2>/dev/null)
+if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l: failed fetch advances cache mtime for backoff"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l: expected exit 0 + advanced mtime, got exit $EXIT (before=$before, after=$after)"
+fi
+
 # --- t2: idempotent re-run does not overwrite ---
 echo "custom-content" > "$PROJ/.editorconfig"
 ROOT="$PROJ" "$SETUP" >/dev/null 2>&1

@@ -6,7 +6,8 @@
 # Dependency-free: bash + curl + date + grep/sed/awk + `security` — no
 # jq/python/node. Designed to be spawned in the background by statusline.sh —
 # silent on every failure so an absent network or missing credentials never
-# disrupt the HUD.
+# disrupt the HUD. API failures advance the cache mtime so statusline.sh waits
+# a full refresh interval before respawning instead of retrying every render.
 #
 # Credentials are read from the macOS Keychain ("Claude Code-credentials"),
 # then ~/.claude/.credentials.json. Set $USAGE_CREDENTIALS_FILE to read from a
@@ -63,6 +64,14 @@ access_token=$(json_str "$creds" accessToken)
 refresh_token=$(json_str "$creds" refreshToken)
 expires_at=$(json_num "$creds" expiresAt)
 
+bail() {
+  # Advance the cache mtime on failure so statusline.sh waits a full refresh
+  # interval before respawning — without this, every render retries instantly
+  # and a transient 429 becomes a permanent request storm.
+  touch "$CACHE" 2>/dev/null || true
+  exit 0
+}
+
 # === refresh the access token when expired ===
 now_ms=$(( $(date +%s) * 1000 ))
 if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
@@ -74,7 +83,7 @@ if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
     --data-urlencode "refresh_token=${refresh_token}" \
     --data-urlencode "client_id=${CLIENT_ID}" 2>/dev/null || true)
   new_token=$(json_str "$refreshed" access_token)
-  [ -z "$new_token" ] && exit 0
+  [ -z "$new_token" ] && bail
   access_token="$new_token"
 fi
 [ -z "$access_token" ] && exit 0
@@ -85,7 +94,7 @@ usage=$(curl -fsS --max-time 10 \
   -H "Authorization: Bearer ${access_token}" \
   -H "anthropic-beta: oauth-2025-04-20" \
   -H "Content-Type: application/json" 2>/dev/null || true)
-[ -z "$usage" ] && exit 0
+[ -z "$usage" ] && bail
 
 # === parse ===
 # Each window is a flat object: {"utilization":N,"resets_at":"..."}.
@@ -112,7 +121,7 @@ iso_of() {
 
 five=$(obj_for "$usage" five_hour)
 week=$(obj_for "$usage" seven_day)
-[ -z "$five" ] && [ -z "$week" ] && exit 0
+[ -z "$five" ] && [ -z "$week" ] && bail
 
 five_pct=$(util_pct "$five")
 five_reset=$(iso_of "$five")
