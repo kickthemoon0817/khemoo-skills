@@ -228,6 +228,7 @@ else
 fi
 
 # --- t1l2: failed token refresh also backs off ---
+# Reuses t1l's failing curl stub.
 printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":1}' > "$FCREDS"
 touch -t 202001010000 "$FCACHE"
 before=$(cache_mtime "$FCACHE")
@@ -258,6 +259,7 @@ else
 fi
 
 # --- t1l4: Retry-After pushes the next attempt into the future ---
+# Reuses t1l3's unexpired credentials file.
 cat > "$STUB/curl" <<'EOF'
 #!/bin/sh
 while [ $# -gt 0 ]; do
@@ -277,6 +279,72 @@ if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$((NOW + 100))" ] && [ "$hdrs_left" -eq 
   PASS=$((PASS + 1)); echo "PASS: t1l4: Retry-After sets a future cache mtime, no header dump left"
 else
   FAIL=$((FAIL + 1)); echo "FAIL: t1l4: expected future mtime + no hdrs file, got exit $EXIT (now=$NOW, after=$after, hdrs=$hdrs_left)"
+fi
+
+# --- t1l5: an oversized Retry-After clamps to the 1h cap ---
+cat > "$STUB/curl" <<'EOF'
+#!/bin/sh
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-D" ]; then printf 'HTTP/2 429\r\nretry-after: 999999\r\n\r\n' > "$2"; shift; fi
+  shift
+done
+exit 22
+EOF
+printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":9999999999999}' > "$FCREDS"
+touch -t 202001010000 "$FCACHE"
+NOW=$(date +%s)
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(cache_mtime "$FCACHE")
+if [ "$EXIT" -eq 0 ] && [ "$after" -ge "$((NOW + 3400))" ] && [ "$after" -le "$((NOW + 3700))" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l5: oversized Retry-After clamps to one hour"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l5: expected mtime ~now+3600, got exit $EXIT (now=$NOW, after=$after)"
+fi
+
+# --- t1l6: expired token with no refresh token also backs off ---
+printf '{"accessToken":"stub","expiresAt":1}' > "$FCREDS"
+touch -t 202001010000 "$FCACHE"
+before=$(cache_mtime "$FCACHE")
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(cache_mtime "$FCACHE")
+if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l6: missing refresh token advances cache mtime"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l6: expected exit 0 + advanced mtime, got exit $EXIT (before=$before, after=$after)"
+fi
+
+# --- t1m: a future-mtime backoff marker suppresses the fetch spawn ---
+SPY="$WORK/spy-fetch.sh"
+SPYLOG="$WORK/spy-fetch.log"
+cat > "$SPY" <<EOF
+#!/bin/sh
+echo ran >> "$SPYLOG"
+EOF
+chmod +x "$SPY"
+FUT="$WORK/future-cache.json"
+: > "$FUT"
+tgt=$(( $(date +%s) + 300 ))
+fstamp=$(date -d "@${tgt}" +%Y%m%d%H%M.%S 2>/dev/null || date -r "$tgt" +%Y%m%d%H%M.%S 2>/dev/null)
+touch -t "$fstamp" "$FUT"
+echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE="$FUT" USAGE_FETCH="$SPY" "$PROJ/.claude/scripts/statusline.sh" >/dev/null
+sleep 0.5
+if [ ! -f "$SPYLOG" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1m: future-mtime marker reads as fresh, no fetch spawned"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1m: fetch was spawned despite a future-mtime marker"
+fi
+
+# --- t1m2: a stale marker spawns the fetch ---
+touch -t 202001010000 "$FUT"
+echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE="$FUT" USAGE_FETCH="$SPY" "$PROJ/.claude/scripts/statusline.sh" >/dev/null
+tries=0
+while [ ! -f "$SPYLOG" ] && [ "$tries" -lt 50 ]; do sleep 0.1; tries=$((tries + 1)); done
+if [ -f "$SPYLOG" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1m2: stale marker spawns the fetch"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1m2: fetch was not spawned for a stale marker"
 fi
 
 # --- t2: idempotent re-run does not overwrite ---
