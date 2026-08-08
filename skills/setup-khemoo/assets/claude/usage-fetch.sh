@@ -3,10 +3,11 @@
 #
 # Reads OAuth credentials, refreshes the access token when expired, calls the
 # usage API, and writes ~/.claude/usage-cache.json for statusline.sh to render.
-# Dependency-free: bash + curl + date + grep/sed/awk + `security` — no
+# Dependency-free: bash + curl + date + grep/sed/awk + mktemp + `security` — no
 # jq/python/node. Designed to be spawned in the background by statusline.sh —
 # silent on every failure so an absent network or missing credentials never
-# disrupt the HUD.
+# disrupt the HUD; failed runs back off (see backoff) instead of letting
+# statusline.sh spawn a fresh fetch on every render.
 #
 # Credentials are read from the macOS Keychain ("Claude Code-credentials"),
 # then ~/.claude/.credentials.json. Set $USAGE_CREDENTIALS_FILE to read from a
@@ -25,7 +26,9 @@ mkdir -p "$(dirname "$CACHE")" 2>/dev/null || true
 # mkdir is atomic; if the dir exists a fetch is already in flight. Reclaim a
 # lock older than 30s in case a prior run was killed before its cleanup.
 file_mtime() {
-  stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0
+  # GNU stat first — BSD stat fails -c with clean stdout, but GNU stat -f
+  # prints a multi-line filesystem dump that poisons arithmetic callers.
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0
 }
 if ! mkdir "$LOCK" 2>/dev/null; then
   age=$(( $(date +%s) - $(file_mtime "$LOCK") ))
@@ -33,7 +36,41 @@ if ! mkdir "$LOCK" 2>/dev/null; then
   rmdir "$LOCK" 2>/dev/null || true
   mkdir "$LOCK" 2>/dev/null || exit 0
 fi
-trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+# Reap only this run's header/tmp files — a glob could delete files a
+# still-live run owns after its >30s lock was reclaimed out from under it.
+trap 'rm -f "${hdrs:-}" "${tmp:-}" 2>/dev/null; rmdir "$LOCK" 2>/dev/null || true' EXIT
+
+# === failure backoff ===
+backoff() {
+  # Advance the cache mtime on every failure so statusline.sh waits a full
+  # refresh interval before spawning the next fetch — a bare exit leaves the
+  # cache stale, and one transient API failure becomes a retry-per-render
+  # storm that keeps the usage endpoint rate limited.
+  #
+  # $1 (optional): delta-seconds from the server's Retry-After — the default
+  # interval would probe a still-hot limiter several times per penalty window
+  # and can re-arm it. A future mtime reads as fresh to statusline.sh's
+  # now-minus-mtime check, so the longer wait needs no statusline change.
+  # The plain touch lands first so an abort below still leaves the default
+  # backoff in place; the future stamp is an upgrade.
+  touch "$CACHE" 2>/dev/null || true
+  local delay="${1:-0}" target stamp
+  # The header is external input: digits only, base-10 (a leading zero would
+  # read as octal), capped at 1h — an hour outlasts every observed penalty
+  # window, and past bash's integer range the cap comparison itself would
+  # silently no-op, so bound the digit count first.
+  case "$delay" in ''|*[!0-9]*) delay=0 ;; esac
+  [ "${#delay}" -gt 4 ] && delay=3600
+  delay=$((10#$delay))
+  [ "$delay" -gt 3600 ] && delay=3600
+  if [ "$delay" -gt 0 ]; then
+    target=$(( $(date +%s) + delay ))
+    stamp=$(date -d "@${target}" +%Y%m%d%H%M.%S 2>/dev/null \
+      || date -r "$target" +%Y%m%d%H%M.%S 2>/dev/null)
+    [ -n "$stamp" ] && touch -t "$stamp" "$CACHE" 2>/dev/null
+  fi
+  exit 0
+}
 
 # === JSON field readers (flat objects only) ===
 json_str() {
@@ -57,7 +94,7 @@ else
     creds=$(cat "${HOME}/.claude/.credentials.json" 2>/dev/null || true)
   fi
 fi
-[ -z "$creds" ] && exit 0
+[ -z "$creds" ] && backoff
 
 access_token=$(json_str "$creds" accessToken)
 refresh_token=$(json_str "$creds" refreshToken)
@@ -66,7 +103,7 @@ expires_at=$(json_num "$creds" expiresAt)
 # === refresh the access token when expired ===
 now_ms=$(( $(date +%s) * 1000 ))
 if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
-  [ -z "$refresh_token" ] && exit 0
+  [ -z "$refresh_token" ] && backoff
   refreshed=$(curl -fsS --max-time 10 -X POST \
     "https://platform.claude.com/v1/oauth/token" \
     -H "Content-Type: application/x-www-form-urlencoded" \
@@ -74,18 +111,31 @@ if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
     --data-urlencode "refresh_token=${refresh_token}" \
     --data-urlencode "client_id=${CLIENT_ID}" 2>/dev/null || true)
   new_token=$(json_str "$refreshed" access_token)
-  [ -z "$new_token" ] && exit 0
+  [ -z "$new_token" ] && backoff
   access_token="$new_token"
 fi
-[ -z "$access_token" ] && exit 0
+[ -z "$access_token" ] && backoff
 
 # === fetch usage ===
-usage=$(curl -fsS --max-time 10 \
+# mktemp, not a PID-suffixed name: curl -D follows symlinks, and a
+# predictable path in ~/.claude would hand a local attacker a content-
+# overwrite primitive. The PID fallback is an accepted residual for a
+# mktemp-less host.
+hdrs=$(mktemp "${CACHE}.hdrs.XXXXXX" 2>/dev/null) || hdrs="${CACHE}.hdrs.$$"
+usage=$(curl -fsS --max-time 10 -D "$hdrs" \
   "https://api.anthropic.com/api/oauth/usage" \
   -H "Authorization: Bearer ${access_token}" \
   -H "anthropic-beta: oauth-2025-04-20" \
   -H "Content-Type: application/json" 2>/dev/null || true)
-[ -z "$usage" ] && exit 0
+if [ -z "$usage" ]; then
+  # Delta-seconds form only: the RFC also allows an HTTP-date, whose first
+  # digit run (the day of month) would masquerade as a tiny delay.
+  retry_after=$(grep -iE '^retry-after:[[:space:]]*[0-9]+[[:space:]]*$' "$hdrs" 2>/dev/null \
+    | head -1 | grep -oE '[0-9]+' | head -1)
+  rm -f "$hdrs"
+  backoff "${retry_after:-0}"
+fi
+rm -f "$hdrs"
 
 # === parse ===
 # Each window is a flat object: {"utilization":N,"resets_at":"..."}.
@@ -112,7 +162,7 @@ iso_of() {
 
 five=$(obj_for "$usage" five_hour)
 week=$(obj_for "$usage" seven_day)
-[ -z "$five" ] && [ -z "$week" ] && exit 0
+[ -z "$five" ] && [ -z "$week" ] && backoff
 
 five_pct=$(util_pct "$five")
 five_reset=$(iso_of "$five")

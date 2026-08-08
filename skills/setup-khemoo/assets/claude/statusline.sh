@@ -161,7 +161,12 @@ fi
 if [ -n "$USAGE_FETCH" ] && [ -x "$USAGE_FETCH" ]; then
   stale=1
   if [ -f "$USAGE_CACHE" ]; then
-    cache_mtime=$(stat -f %m "$USAGE_CACHE" 2>/dev/null || stat -c %Y "$USAGE_CACHE" 2>/dev/null || echo 0)
+    # GNU stat first — BSD stat fails -c with clean stdout, but GNU stat -f
+    # prints a multi-line filesystem dump. stat output is an external-command
+    # boundary: anything non-numeric must degrade to stale, not abort the
+    # render under set -u.
+    cache_mtime=$(stat -c %Y "$USAGE_CACHE" 2>/dev/null || stat -f %m "$USAGE_CACHE" 2>/dev/null || echo 0)
+    case "$cache_mtime" in ''|*[!0-9]*) cache_mtime=0 ;; esac
     [ "$(( $(date +%s) - cache_mtime ))" -lt 120 ] && stale=0
   fi
   [ "$stale" -eq 1 ] && ( USAGE_CACHE="$USAGE_CACHE" "$USAGE_FETCH" >/dev/null 2>&1 & )
@@ -169,7 +174,8 @@ fi
 
 five_part=""
 week_part=""
-if [ -f "$USAGE_CACHE" ]; then
+# -s: an empty backoff marker has no fields to read — skip the fork burst.
+if [ -s "$USAGE_CACHE" ]; then
   five_pct=$(pull_num_from "$USAGE_CACHE" fiveHourPercent)
   five_reset=$(pull_str_from "$USAGE_CACHE" fiveHourResetsAt)
   week_pct=$(pull_num_from "$USAGE_CACHE" weeklyPercent)
