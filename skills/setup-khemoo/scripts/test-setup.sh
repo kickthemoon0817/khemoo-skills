@@ -135,6 +135,16 @@ else
   FAIL=$((FAIL + 1)); echo "FAIL: t1f: expected '??% ... 5h' and '??% ... 7d' placeholders, got: $HUD_OUT"
 fi
 
+# --- t1f2: empty cache file (a backoff marker) → placeholders still render ---
+ECACHE="$WORK/empty-cache.json"
+: > "$ECACHE"
+HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE="$ECACHE" "$PROJ/.claude/scripts/statusline.sh")
+if echo "$HUD_OUT" | grep -qE '\?\?%.*5h' && echo "$HUD_OUT" | grep -qE '\?\?%.*7d'; then
+  PASS=$((PASS + 1)); echo "PASS: t1f2: placeholders rendered from an empty cache file"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1f2: expected placeholders from an empty cache file, got: $HUD_OUT"
+fi
+
 # --- t1g: no transcript → gray "???k/? context" placeholder ---
 HUD_OUT=$(echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE=/nonexistent "$PROJ/.claude/scripts/statusline.sh")
 if echo "$HUD_OUT" | grep -q '???k/? context'; then
@@ -210,6 +220,57 @@ if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
   PASS=$((PASS + 1)); echo "PASS: t1l: failed fetch advances cache mtime for backoff"
 else
   FAIL=$((FAIL + 1)); echo "FAIL: t1l: expected exit 0 + advanced mtime, got exit $EXIT (before=$before, after=$after)"
+fi
+
+# --- t1l2: failed token refresh also backs off ---
+printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":1}' > "$FCREDS"
+touch -t 202001010000 "$FCACHE"
+before=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l2: failed token refresh advances cache mtime"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l2: expected exit 0 + advanced mtime, got exit $EXIT (before=$before, after=$after)"
+fi
+
+# --- t1l3: usage response that parses to neither window also backs off ---
+cat > "$STUB/curl" <<'EOF'
+#!/bin/sh
+echo '{"unexpected":true}'
+EOF
+printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":9999999999999}' > "$FCREDS"
+touch -t 202001010000 "$FCACHE"
+before=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l3: unparseable usage response advances cache mtime"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l3: expected exit 0 + advanced mtime, got exit $EXIT (before=$before, after=$after)"
+fi
+
+# --- t1l4: Retry-After pushes the next attempt into the future ---
+cat > "$STUB/curl" <<'EOF'
+#!/bin/sh
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-D" ]; then printf 'HTTP/2 429\r\nretry-after: 300\r\n\r\n' > "$2"; shift; fi
+  shift
+done
+exit 22
+EOF
+touch -t 202001010000 "$FCACHE"
+NOW=$(date +%s)
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+hdrs_left=$(ls "$FCACHE".hdrs.* 2>/dev/null | wc -l)
+if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$((NOW + 100))" ] && [ "$hdrs_left" -eq 0 ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l4: Retry-After sets a future cache mtime, no header dump left"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l4: expected future mtime + no hdrs file, got exit $EXIT (now=$NOW, after=$after, hdrs=$hdrs_left)"
 fi
 
 # --- t2: idempotent re-run does not overwrite ---
