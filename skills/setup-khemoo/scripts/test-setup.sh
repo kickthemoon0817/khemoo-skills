@@ -44,6 +44,11 @@ assert_eq() {
   fi
 }
 
+cache_mtime() {
+  # GNU stat first — BSD stat fails -c with clean stdout.
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null
+}
+
 # --- t1: project setup on an empty dir writes all expected files ---
 PROJ="$WORK/proj"
 mkdir -p "$PROJ"
@@ -204,7 +209,7 @@ fi
 # --- t1l: failed API fetch advances the cache mtime (retry backoff) ---
 # A curl stub forces the usage call to fail; valid-shaped unexpired creds get
 # the script past the credential stage. The advanced mtime is the backoff
-# signal that stops statusline.sh from respawning the fetcher every render.
+# signal that stops statusline.sh from spawning the fetcher every render.
 STUB="$WORK/stub-bin"
 mkdir -p "$STUB"
 printf '#!/bin/sh\nexit 22\n' > "$STUB/curl"
@@ -212,10 +217,10 @@ chmod +x "$STUB/curl"
 FCREDS="$WORK/fetch-creds.json"
 printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":9999999999999}' > "$FCREDS"
 touch -t 202001010000 "$FCACHE"
-before=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+before=$(cache_mtime "$FCACHE")
 PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
 EXIT=$?
-after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+after=$(cache_mtime "$FCACHE")
 if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
   PASS=$((PASS + 1)); echo "PASS: t1l: failed fetch advances cache mtime for backoff"
 else
@@ -225,10 +230,10 @@ fi
 # --- t1l2: failed token refresh also backs off ---
 printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":1}' > "$FCREDS"
 touch -t 202001010000 "$FCACHE"
-before=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+before=$(cache_mtime "$FCACHE")
 PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
 EXIT=$?
-after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+after=$(cache_mtime "$FCACHE")
 if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
   PASS=$((PASS + 1)); echo "PASS: t1l2: failed token refresh advances cache mtime"
 else
@@ -242,10 +247,10 @@ echo '{"unexpected":true}'
 EOF
 printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":9999999999999}' > "$FCREDS"
 touch -t 202001010000 "$FCACHE"
-before=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+before=$(cache_mtime "$FCACHE")
 PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
 EXIT=$?
-after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+after=$(cache_mtime "$FCACHE")
 if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$before" ]; then
   PASS=$((PASS + 1)); echo "PASS: t1l3: unparseable usage response advances cache mtime"
 else
@@ -265,7 +270,7 @@ touch -t 202001010000 "$FCACHE"
 NOW=$(date +%s)
 PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
 EXIT=$?
-after=$(stat -c %Y "$FCACHE" 2>/dev/null || stat -f %m "$FCACHE" 2>/dev/null)
+after=$(cache_mtime "$FCACHE")
 hdrs_left=0
 for f in "$FCACHE".hdrs.*; do [ -e "$f" ] && hdrs_left=$((hdrs_left + 1)); done
 if [ "$EXIT" -eq 0 ] && [ "$after" -gt "$((NOW + 100))" ] && [ "$hdrs_left" -eq 0 ]; then
