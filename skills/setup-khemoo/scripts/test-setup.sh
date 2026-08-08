@@ -167,18 +167,20 @@ else
   PASS=$((PASS + 1)); echo "PASS: t1k: no detail line when HUD_DETAIL unset"
 fi
 
-# --- t1h: usage-fetch.sh with no credentials exits 0 and writes no cache ---
+# --- t1h: no credentials → exits 0 and creates the empty backoff marker ---
 FETCH="$PROJ/.claude/scripts/usage-fetch.sh"
 FCACHE="$WORK/fetch-cache.json"
 USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE=/nonexistent "$FETCH"
 EXIT=$?
-if [ "$EXIT" -eq 0 ] && [ ! -f "$FCACHE" ]; then
-  PASS=$((PASS + 1)); echo "PASS: t1h: usage-fetch.sh exits clean and writes nothing without credentials"
+if [ "$EXIT" -eq 0 ] && [ -f "$FCACHE" ] && [ ! -s "$FCACHE" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1h: missing credentials back off via an empty cache marker"
 else
-  FAIL=$((FAIL + 1)); echo "FAIL: t1h: expected exit 0 + no cache, got exit $EXIT"
+  FAIL=$((FAIL + 1)); echo "FAIL: t1h: expected exit 0 + empty cache marker, got exit $EXIT"
 fi
 
 # --- t1i: usage-fetch.sh skips when another fetch holds the lock ---
+# No backoff touch here: the in-flight fetch owns the cache update.
+rm -f "$FCACHE"
 mkdir "${FCACHE}.lock"
 USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE=/nonexistent "$FETCH"
 EXIT=$?

@@ -6,8 +6,8 @@
 # Dependency-free: bash + curl + date + grep/sed/awk + `security` — no
 # jq/python/node. Designed to be spawned in the background by statusline.sh —
 # silent on every failure so an absent network or missing credentials never
-# disrupt the HUD. API failures advance the cache mtime so statusline.sh waits
-# a full refresh interval before respawning instead of retrying every render.
+# disrupt the HUD; failed runs back off (see backoff) instead of letting
+# statusline.sh spawn a fresh fetch on every render.
 #
 # Credentials are read from the macOS Keychain ("Claude Code-credentials"),
 # then ~/.claude/.credentials.json. Set $USAGE_CREDENTIALS_FILE to read from a
@@ -38,6 +38,16 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 fi
 trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
 
+# === failure backoff ===
+backoff() {
+  # Advance the cache mtime on every failure so statusline.sh waits a full
+  # refresh interval before spawning the next fetch — a bare exit leaves the
+  # cache stale, and one transient API failure becomes a retry-per-render
+  # storm that keeps the usage endpoint rate limited.
+  touch "$CACHE" 2>/dev/null || true
+  exit 0
+}
+
 # === JSON field readers (flat objects only) ===
 json_str() {
   printf '%s' "$1" | grep -oE "\"$2\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" \
@@ -60,24 +70,16 @@ else
     creds=$(cat "${HOME}/.claude/.credentials.json" 2>/dev/null || true)
   fi
 fi
-[ -z "$creds" ] && exit 0
+[ -z "$creds" ] && backoff
 
 access_token=$(json_str "$creds" accessToken)
 refresh_token=$(json_str "$creds" refreshToken)
 expires_at=$(json_num "$creds" expiresAt)
 
-bail() {
-  # Advance the cache mtime on failure so statusline.sh waits a full refresh
-  # interval before respawning — without this, every render retries instantly
-  # and a transient 429 becomes a permanent request storm.
-  touch "$CACHE" 2>/dev/null || true
-  exit 0
-}
-
 # === refresh the access token when expired ===
 now_ms=$(( $(date +%s) * 1000 ))
 if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
-  [ -z "$refresh_token" ] && exit 0
+  [ -z "$refresh_token" ] && backoff
   refreshed=$(curl -fsS --max-time 10 -X POST \
     "https://platform.claude.com/v1/oauth/token" \
     -H "Content-Type: application/x-www-form-urlencoded" \
@@ -85,10 +87,10 @@ if [ -n "$expires_at" ] && [ "$expires_at" -le "$now_ms" ] 2>/dev/null; then
     --data-urlencode "refresh_token=${refresh_token}" \
     --data-urlencode "client_id=${CLIENT_ID}" 2>/dev/null || true)
   new_token=$(json_str "$refreshed" access_token)
-  [ -z "$new_token" ] && bail
+  [ -z "$new_token" ] && backoff
   access_token="$new_token"
 fi
-[ -z "$access_token" ] && exit 0
+[ -z "$access_token" ] && backoff
 
 # === fetch usage ===
 usage=$(curl -fsS --max-time 10 \
@@ -96,7 +98,7 @@ usage=$(curl -fsS --max-time 10 \
   -H "Authorization: Bearer ${access_token}" \
   -H "anthropic-beta: oauth-2025-04-20" \
   -H "Content-Type: application/json" 2>/dev/null || true)
-[ -z "$usage" ] && bail
+[ -z "$usage" ] && backoff
 
 # === parse ===
 # Each window is a flat object: {"utilization":N,"resets_at":"..."}.
@@ -123,7 +125,7 @@ iso_of() {
 
 five=$(obj_for "$usage" five_hour)
 week=$(obj_for "$usage" seven_day)
-[ -z "$five" ] && [ -z "$week" ] && bail
+[ -z "$five" ] && [ -z "$week" ] && backoff
 
 five_pct=$(util_pct "$five")
 five_reset=$(iso_of "$five")
