@@ -119,7 +119,8 @@ fi
 # === fetch usage ===
 # mktemp, not a PID-suffixed name: curl -D follows symlinks, and a
 # predictable path in ~/.claude would hand a local attacker a content-
-# overwrite primitive.
+# overwrite primitive. The PID fallback is an accepted residual for a
+# mktemp-less host.
 hdrs=$(mktemp "${CACHE}.hdrs.XXXXXX" 2>/dev/null) || hdrs="${CACHE}.hdrs.$$"
 usage=$(curl -fsS --max-time 10 -D "$hdrs" \
   "https://api.anthropic.com/api/oauth/usage" \
