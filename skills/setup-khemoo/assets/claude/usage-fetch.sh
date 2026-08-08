@@ -36,7 +36,9 @@ if ! mkdir "$LOCK" 2>/dev/null; then
   rmdir "$LOCK" 2>/dev/null || true
   mkdir "$LOCK" 2>/dev/null || exit 0
 fi
-trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+# The rm reaps header/tmp orphans a killed prior run may have left; the
+# single-flight lock guarantees no live run owns them.
+trap 'rm -f "$CACHE".hdrs.* "$CACHE".tmp.* 2>/dev/null; rmdir "$LOCK" 2>/dev/null || true' EXIT
 
 # === failure backoff ===
 backoff() {
@@ -44,6 +46,21 @@ backoff() {
   # refresh interval before spawning the next fetch — a bare exit leaves the
   # cache stale, and one transient API failure becomes a retry-per-render
   # storm that keeps the usage endpoint rate limited.
+  #
+  # $1 (optional): seconds until the next attempt, from the server's
+  # Retry-After — the default interval would probe a still-hot limiter
+  # several times per penalty window and can re-arm it. A future mtime reads
+  # as fresh to statusline.sh's now-minus-mtime check, so the longer wait
+  # needs no statusline change. Capped: the header is external input.
+  local delay="${1:-0}" target stamp
+  case "$delay" in ''|*[!0-9]*) delay=0 ;; esac
+  [ "$delay" -gt 3600 ] && delay=3600
+  if [ "$delay" -gt 0 ]; then
+    target=$(( $(date +%s) + delay ))
+    stamp=$(date -d "@${target}" +%Y%m%d%H%M.%S 2>/dev/null \
+      || date -r "$target" +%Y%m%d%H%M.%S 2>/dev/null)
+    [ -n "$stamp" ] && touch -t "$stamp" "$CACHE" 2>/dev/null && exit 0
+  fi
   touch "$CACHE" 2>/dev/null || true
   exit 0
 }
@@ -93,12 +110,19 @@ fi
 [ -z "$access_token" ] && backoff
 
 # === fetch usage ===
-usage=$(curl -fsS --max-time 10 \
+hdrs="${CACHE}.hdrs.$$"
+usage=$(curl -fsS --max-time 10 -D "$hdrs" \
   "https://api.anthropic.com/api/oauth/usage" \
   -H "Authorization: Bearer ${access_token}" \
   -H "anthropic-beta: oauth-2025-04-20" \
   -H "Content-Type: application/json" 2>/dev/null || true)
-[ -z "$usage" ] && backoff
+if [ -z "$usage" ]; then
+  retry_after=$(grep -iE '^retry-after:' "$hdrs" 2>/dev/null | head -1 \
+    | grep -oE '[0-9]+' | head -1)
+  rm -f "$hdrs"
+  backoff "${retry_after:-0}"
+fi
+rm -f "$hdrs"
 
 # === parse ===
 # Each window is a flat object: {"utilization":N,"resets_at":"..."}.
