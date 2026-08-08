@@ -315,6 +315,48 @@ else
   FAIL=$((FAIL + 1)); echo "FAIL: t1l6: expected exit 0 + advanced mtime, got exit $EXIT (before=$before, after=$after)"
 fi
 
+# --- t1l7: an HTTP-date Retry-After is rejected, default backoff applies ---
+cat > "$STUB/curl" <<'EOF'
+#!/bin/sh
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-D" ]; then printf 'HTTP/2 429\r\nretry-after: Wed, 21 Oct 2026 07:28:00 GMT\r\n\r\n' > "$2"; shift; fi
+  shift
+done
+exit 22
+EOF
+printf '{"accessToken":"stub","refreshToken":"stub","expiresAt":9999999999999}' > "$FCREDS"
+touch -t 202001010000 "$FCACHE"
+NOW=$(date +%s)
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(cache_mtime "$FCACHE")
+if [ "$EXIT" -eq 0 ] && [ "$after" -ge "$NOW" ] && [ "$after" -le "$((NOW + 10))" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l7: HTTP-date Retry-After falls through to the default backoff"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l7: expected mtime ~now (date form rejected), got exit $EXIT (now=$NOW, after=$after)"
+fi
+
+# --- t1l8: a leading-zero Retry-After parses as base-10, not octal ---
+# Reuses t1l7's unexpired credentials file.
+cat > "$STUB/curl" <<'EOF'
+#!/bin/sh
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-D" ]; then printf 'HTTP/2 429\r\nretry-after: 08\r\n\r\n' > "$2"; shift; fi
+  shift
+done
+exit 22
+EOF
+touch -t 202001010000 "$FCACHE"
+NOW=$(date +%s)
+PATH="$STUB:$PATH" USAGE_CACHE="$FCACHE" USAGE_CREDENTIALS_FILE="$FCREDS" "$FETCH"
+EXIT=$?
+after=$(cache_mtime "$FCACHE")
+if [ "$EXIT" -eq 0 ] && [ "$after" -ge "$((NOW + 5))" ] && [ "$after" -le "$((NOW + 60))" ]; then
+  PASS=$((PASS + 1)); echo "PASS: t1l8: leading-zero Retry-After applies its base-10 delay"
+else
+  FAIL=$((FAIL + 1)); echo "FAIL: t1l8: expected mtime ~now+8 (base-10), got exit $EXIT (now=$NOW, after=$after)"
+fi
+
 # --- t1m: a future-mtime backoff marker suppresses the fetch spawn ---
 SPY="$WORK/spy-fetch.sh"
 SPYLOG="$WORK/spy-fetch.log"
@@ -329,6 +371,9 @@ tgt=$(( $(date +%s) + 300 ))
 fstamp=$(date -d "@${tgt}" +%Y%m%d%H%M.%S 2>/dev/null || date -r "$tgt" +%Y%m%d%H%M.%S 2>/dev/null)
 touch -t "$fstamp" "$FUT"
 echo '{"model":{"display_name":"Sonnet"},"session_id":"abc","workspace":{"current_dir":"/tmp/demo"}}' | USAGE_CACHE="$FUT" USAGE_FETCH="$SPY" "$PROJ/.claude/scripts/statusline.sh" >/dev/null
+# 0.5s suffices for the negative: the spawn decision is synchronous, so a
+# correct statusline forks nothing at all — only an already-broken one
+# could log late.
 sleep 0.5
 if [ ! -f "$SPYLOG" ]; then
   PASS=$((PASS + 1)); echo "PASS: t1m: future-mtime marker reads as fresh, no fetch spawned"
