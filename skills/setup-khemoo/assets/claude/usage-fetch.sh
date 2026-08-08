@@ -47,21 +47,28 @@ backoff() {
   # cache stale, and one transient API failure becomes a retry-per-render
   # storm that keeps the usage endpoint rate limited.
   #
-  # $1 (optional): seconds until the next attempt, from the server's
-  # Retry-After — the default interval would probe a still-hot limiter
-  # several times per penalty window and can re-arm it. A future mtime reads
-  # as fresh to statusline.sh's now-minus-mtime check, so the longer wait
-  # needs no statusline change. Capped: the header is external input.
+  # $1 (optional): delta-seconds from the server's Retry-After — the default
+  # interval would probe a still-hot limiter several times per penalty window
+  # and can re-arm it. A future mtime reads as fresh to statusline.sh's
+  # now-minus-mtime check, so the longer wait needs no statusline change.
+  # The plain touch lands first so an abort below still leaves the default
+  # backoff in place; the future stamp is an upgrade.
+  touch "$CACHE" 2>/dev/null || true
   local delay="${1:-0}" target stamp
+  # The header is external input: digits only, base-10 (a leading zero would
+  # read as octal), capped at 1h — an hour outlasts every observed penalty
+  # window, and past bash's integer range the cap comparison itself would
+  # silently no-op, so bound the digit count first.
   case "$delay" in ''|*[!0-9]*) delay=0 ;; esac
+  [ "${#delay}" -gt 4 ] && delay=3600
+  delay=$((10#$delay))
   [ "$delay" -gt 3600 ] && delay=3600
   if [ "$delay" -gt 0 ]; then
     target=$(( $(date +%s) + delay ))
     stamp=$(date -d "@${target}" +%Y%m%d%H%M.%S 2>/dev/null \
       || date -r "$target" +%Y%m%d%H%M.%S 2>/dev/null)
-    [ -n "$stamp" ] && touch -t "$stamp" "$CACHE" 2>/dev/null && exit 0
+    [ -n "$stamp" ] && touch -t "$stamp" "$CACHE" 2>/dev/null
   fi
-  touch "$CACHE" 2>/dev/null || true
   exit 0
 }
 
@@ -117,8 +124,10 @@ usage=$(curl -fsS --max-time 10 -D "$hdrs" \
   -H "anthropic-beta: oauth-2025-04-20" \
   -H "Content-Type: application/json" 2>/dev/null || true)
 if [ -z "$usage" ]; then
-  retry_after=$(grep -iE '^retry-after:' "$hdrs" 2>/dev/null | head -1 \
-    | grep -oE '[0-9]+' | head -1)
+  # Delta-seconds form only: the RFC also allows an HTTP-date, whose first
+  # digit run (the day of month) would masquerade as a tiny delay.
+  retry_after=$(grep -iE '^retry-after:[[:space:]]*[0-9]+[[:space:]]*$' "$hdrs" 2>/dev/null \
+    | head -1 | grep -oE '[0-9]+' | head -1)
   rm -f "$hdrs"
   backoff "${retry_after:-0}"
 fi
