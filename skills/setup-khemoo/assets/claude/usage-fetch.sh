@@ -3,7 +3,7 @@
 #
 # Reads OAuth credentials, refreshes the access token when expired, calls the
 # usage API, and writes ~/.claude/usage-cache.json for statusline.sh to render.
-# Dependency-free: bash + curl + date + grep/sed/awk + `security` — no
+# Dependency-free: bash + curl + date + grep/sed/awk + mktemp + `security` — no
 # jq/python/node. Designed to be spawned in the background by statusline.sh —
 # silent on every failure so an absent network or missing credentials never
 # disrupt the HUD; failed runs back off (see backoff) instead of letting
@@ -36,9 +36,9 @@ if ! mkdir "$LOCK" 2>/dev/null; then
   rmdir "$LOCK" 2>/dev/null || true
   mkdir "$LOCK" 2>/dev/null || exit 0
 fi
-# The rm reaps header/tmp orphans a killed prior run may have left; the
-# single-flight lock guarantees no live run owns them.
-trap 'rm -f "$CACHE".hdrs.* "$CACHE".tmp.* 2>/dev/null; rmdir "$LOCK" 2>/dev/null || true' EXIT
+# Reap only this run's header/tmp files — a glob could delete files a
+# still-live run owns after its >30s lock was reclaimed out from under it.
+trap 'rm -f "${hdrs:-}" "${tmp:-}" 2>/dev/null; rmdir "$LOCK" 2>/dev/null || true' EXIT
 
 # === failure backoff ===
 backoff() {
@@ -117,7 +117,10 @@ fi
 [ -z "$access_token" ] && backoff
 
 # === fetch usage ===
-hdrs="${CACHE}.hdrs.$$"
+# mktemp, not a PID-suffixed name: curl -D follows symlinks, and a
+# predictable path in ~/.claude would hand a local attacker a content-
+# overwrite primitive.
+hdrs=$(mktemp "${CACHE}.hdrs.XXXXXX" 2>/dev/null) || hdrs="${CACHE}.hdrs.$$"
 usage=$(curl -fsS --max-time 10 -D "$hdrs" \
   "https://api.anthropic.com/api/oauth/usage" \
   -H "Authorization: Bearer ${access_token}" \
