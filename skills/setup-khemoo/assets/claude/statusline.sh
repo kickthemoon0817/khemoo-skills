@@ -174,7 +174,8 @@ fi
 
 five_part=""
 week_part=""
-if [ -f "$USAGE_CACHE" ]; then
+# -s: an empty backoff marker has no fields to read — skip the fork burst.
+if [ -s "$USAGE_CACHE" ]; then
   five_pct=$(pull_num_from "$USAGE_CACHE" fiveHourPercent)
   five_reset=$(pull_str_from "$USAGE_CACHE" fiveHourResetsAt)
   week_pct=$(pull_num_from "$USAGE_CACHE" weeklyPercent)
