@@ -11,6 +11,12 @@ description: Use when there are uncommitted changes in the working tree, an unme
 
 **Announce at start:** "Using vc-khemoo to run the version control pipeline."
 
+## Client adaptation
+
+Invoke as `/vc-khemoo` in Claude Code or `$vc-khemoo` in Codex. Resolve reference paths relative to this skill directory. The stages and review criteria apply to both clients.
+
+Use the host's available subagent tool for independent reviews. Reviewer names below describe roles, not required installed agent types. Give each reviewer its brief and the relevant diff; inherit the session's configured model unless the user requests an available override. Do not pass another provider's model aliases or assume a custom agent profile exists. Respect host concurrency limits by running review batches. If independent delegation is unavailable, report the limitation rather than claiming the required independent review passed.
+
 ## Context Detection
 
 Before running, detect the current state and start at the **first** stage below whose condition is true. If none match, there is nothing to do.
@@ -89,23 +95,23 @@ Dispatch parallel review subagents. **No "too small to review" exemption** — d
 
 **Reviewer roster** (cores always dispatched; agents when their trigger matches):
 
-| Reviewer | Agent | Model | Trigger / Focus | Brief |
-|----------|-------|-------|-----------------|-------|
-| Code | `code-reviewer` | opus | always · logic, architecture, contracts | `references/cores.md` |
-| Security | `security-reviewer` | sonnet | always · OWASP, injection, auth, BOLA | `references/cores.md` |
-| Quality | `quality-reviewer` | sonnet | always · naming, patterns, anti-patterns | `references/cores.md` |
-| Performance | `quality-reviewer` | opus | always · complexity, memory, latency | `references/cores.md` |
-| Test Engineer | `test-engineer` | sonnet | always · coverage, edge cases | `references/cores.md` |
-| UI/UX | `designer` | sonnet | `**/*.{tsx,jsx,vue,svelte}`, components | `references/agents/ui-ux.md` |
-| Design | `designer` | sonnet | `**/*.{css,scss,sass,less}`, styles, design tokens | `references/agents/design.md` |
-| DevOps | `build-fixer` | sonnet | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` | `references/agents/devops.md` |
-| Documentation | `writer` | sonnet | `**/*.md`, `docs/**`, public-API surface | `references/agents/documentation.md` |
-| Observability | `code-reviewer` | sonnet | log / metric / trace SDK calls, observability libs | `references/agents/observability.md` |
-| API/Contract | `code-reviewer` | opus | `**/api/**`, OpenAPI / GraphQL / proto, exported public types, **new endpoint accepting user-controlled identifiers** | `references/agents/api-contract.md` |
-| Systems Performance | `code-reviewer` | opus | native code, locks, atomics, hot paths, `bench/**` | `references/agents/systems-performance.md` |
-| Security Deep | `security-reviewer` | opus | crypto, auth flows, supply-chain, sandboxing, **new endpoint accepting user-controlled identifiers (BOLA surface)** | `references/agents/security-deep.md` |
+| Reviewer | Role | Trigger / Focus | Brief |
+|----------|------|-----------------|-------|
+| Code | `code-reviewer` | always · logic, architecture, contracts | `references/cores.md` |
+| Security | `security-reviewer` | always · OWASP, injection, auth, BOLA | `references/cores.md` |
+| Quality | `quality-reviewer` | always · naming, patterns, anti-patterns | `references/cores.md` |
+| Performance | `quality-reviewer` | always · complexity, memory, latency | `references/cores.md` |
+| Test Engineer | `test-engineer` | always · coverage, edge cases | `references/cores.md` |
+| UI/UX | `designer` | `**/*.{tsx,jsx,vue,svelte}`, components | `references/agents/ui-ux.md` |
+| Design | `designer` | `**/*.{css,scss,sass,less}`, styles, design tokens | `references/agents/design.md` |
+| DevOps | `build-fixer` | `Dockerfile*`, `.github/workflows/**`, `*.tf`, `k8s/**`, `deploy/**` | `references/agents/devops.md` |
+| Documentation | `writer` | `**/*.md`, `docs/**`, public-API surface | `references/agents/documentation.md` |
+| Observability | `code-reviewer` | log / metric / trace SDK calls, observability libs | `references/agents/observability.md` |
+| API/Contract | `code-reviewer` | `**/api/**`, OpenAPI / GraphQL / proto, exported public types, **new endpoint accepting user-controlled identifiers** | `references/agents/api-contract.md` |
+| Systems Performance | `code-reviewer` | native code, locks, atomics, hot paths, `bench/**` | `references/agents/systems-performance.md` |
+| Security Deep | `security-reviewer` | crypto, auth flows, supply-chain, sandboxing, **new endpoint accepting user-controlled identifiers (BOLA surface)** | `references/agents/security-deep.md` |
 
-`quality-reviewer` is dispatched twice intentionally (sonnet for Quality, opus for Performance). When a system agent dispatches, the matching core reviewer still runs — the agent adds depth, not replacement.
+Quality and Performance are separate review sessions even when they use the same agent profile. When a system agent dispatches, the matching core reviewer still runs — the agent adds depth, not replacement.
 
 **Load only the brief files for reviewers you actually dispatch.** Multiple agents may dispatch on the same diff; deduplication happens at aggregation time.
 

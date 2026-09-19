@@ -1,6 +1,8 @@
 # Contributing
 
-This repo is built around two skills (`vc-khemoo`, `tasks-khemoo`) that encode the conventions we follow. If you're contributing as a human (not via an AI agent), the same rules apply — they're listed here so you don't need to load the skills to know them.
+The `vc-khemoo` and `tasks-khemoo` skills encode the conventions we follow. If you're contributing as a human (not via an AI agent), the same rules apply — they're listed here so you don't need to load the skills to know them.
+
+Skills serve both Claude Code and Codex. Keep shared instructions client-neutral, resolve helpers relative to the skill directory, and identify client-specific tools or runtime requirements explicitly. Use `/skill-name` in Claude Code and `$skill-name` in Codex; both read the same skill sources.
 
 ## Commits
 
@@ -110,6 +112,10 @@ for t in "${tests[@]}"; do "$t"; done
 Quick tasks go in `TODO.md` — bonded to the in-session task list via the `<!-- tasks-khemoo:start -->` … `<!-- tasks-khemoo:end -->` markers. Use the `tasks-khemoo` skill (or the helper script `skills/tasks-khemoo/scripts/todo-md.sh`) to add/done/remove tasks so cosmetic drift doesn't accumulate.
 
 Larger planning entries (multi-step initiatives, design notes) go above the bondable section in `TODO.md` as h2 sections — the bondable section is auto-managed and only touches its own bullets.
+
+## Harness upstream
+
+`skills/harness-khemoo/upstream` is a pinned submodule of [harness-khemoo](https://github.com/kickthemoon0817/harness-khemoo). Keep engine fixes and their GitHub issues in that repository; keep the skill wrapper and integration changes here. Initialize it with `git submodule update --init --recursive`. To adopt an upstream fix, check out its reviewed commit in the submodule, then commit the updated gitlink in this repository. Parent lint excludes upstream Markdown; upstream maintains its own sources.
 
 ## Release history
 

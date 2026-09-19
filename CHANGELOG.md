@@ -2,6 +2,11 @@
 
 All notable changes to this plugin. Versions follow strict semver `vMAJOR.MINOR.PATCH`. Pre-1.0, the bar for minor is intentionally high — see `skills/vc-khemoo/references/bump-decision.md`.
 
+## [Unreleased]
+
+- Added `harness-khemoo`, a thin setup and operations skill backed by a pinned `harness-khemoo` Git submodule. Engine development and issue tracking remain upstream; runtime configuration and state stay outside the plugin checkout.
+- Added Codex installation and invocation guidance, client-neutral task/review workflows, and `setup-khemoo --cli claude|codex|both` with Codex user instructions under `CODEX_HOME`. Existing setup calls retain the Claude default.
+
 ## [0.1.73] — 2026-08-09
 
 - setup-khemoo: `usage-fetch.sh` now backs off on every failure instead of leaving the cache stale — statusline.sh re-spawns the fetcher on each render whenever the cache is older than 120s, so one transient API failure became a retry-per-render storm that kept the OAuth usage endpoint rate limited and froze the HUD percentages for days (#5). Every failure exit advances the cache mtime (creating an empty marker when none exists), and a rate-limited fetch honors `Retry-After` by pushing the next attempt into the future (delta-seconds form only, digit-bounded, base-10, capped at 1h). The header dump is created via `mktemp`; the EXIT trap reaps only the run's own files.

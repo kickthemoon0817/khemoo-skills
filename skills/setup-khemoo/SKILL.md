@@ -1,50 +1,56 @@
 ---
 name: setup-khemoo
-description: Use whenever the user wants to bootstrap a project (or their user-global Claude config) for AI collaboration — sets up the `AGENTS.md`/`CLAUDE.md` instruction templates, `.claude/settings.json` with a HUD statusline, `.editorconfig`, and `.markdownlint.json`. Triggers on "set up this project for Claude", "bootstrap AGENTS.md", "/setup-khemoo", or when the user starts a new project that needs the standard scaffolding. Invoke even when the user phrases the ask casually ("get this repo Claude-ready", "drop in the usual configs").
+description: Bootstrap project or user instructions for Claude Code, Codex, or both. Creates AGENTS.md, optional Claude imports and HUD settings, and project editor/lint configuration without overwriting existing files. Use for setup-khemoo, bootstrap AGENTS.md, or making a project ready for either CLI.
 ---
 
 # Project + user-config bootstrap for AI collaboration
 
-## Sub-commands
+## Scope and client selection
 
-- `/setup-khemoo` — full setup at project scope (default)
-- `/setup-khemoo --project` — explicit project scope (same as default)
-- `/setup-khemoo --user` — full setup at user scope (`~/.claude/`)
+- `--project` (default): use the git toplevel, or `$PWD` outside a repository.
+- `--user`: use each selected client's global instruction directory.
+- `--cli claude|codex|both`: select the client; the script defaults to `claude` for compatibility.
 
-Idempotent — never overwrites existing files. Reports which files were written vs skipped because they already exist.
+When invoked as a skill, honor the user's selected client. Otherwise use the current client (`codex` in Codex, `claude` in Claude Code); use `both` when the user requests both. Pass the client explicitly to the script. Claude Code invokes the skill as `/setup-khemoo`; Codex invokes it as `$setup-khemoo`.
+
+Idempotent — preserves existing files and symlinks. Reports which files were written or skipped.
 
 ## What gets written
 
-### Workspace files
+### Project scope
 
-| File | `--project` (default) | `--user` |
-|---|---|---|
-| `AGENTS.md` (canonical agent instructions) | `<root>/AGENTS.md` | `~/.claude/AGENTS.md` |
-| `CLAUDE.md` (imports `AGENTS.md` via `@AGENTS.md`) | `<root>/CLAUDE.md` | `~/.claude/CLAUDE.md` |
-| Claude Code settings (with HUD `statusLine` wired up) | `<root>/.claude/settings.json` | `~/.claude/settings.json` |
-| HUD statusline script | `<root>/.claude/scripts/statusline.sh` | `~/.claude/scripts/statusline.sh` |
-| HUD usage fetcher | `<root>/.claude/scripts/usage-fetch.sh` | `~/.claude/scripts/usage-fetch.sh` |
-| `.editorconfig` | `<root>/.editorconfig` | — (project-only) |
-| `.markdownlint.json` | `<root>/.markdownlint.json` | — (project-only) |
+| File | `claude` | `codex` | `both` |
+|---|---|---|---|
+| `AGENTS.md` (canonical agent instructions) | Yes | Yes | Shared |
+| `CLAUDE.md` (imports `AGENTS.md` via `@AGENTS.md`) | Yes | — | Yes |
+| `.claude/settings.json` with HUD `statusLine` | Yes | — | Yes |
+| `.claude/scripts/statusline.sh` and `usage-fetch.sh` | Yes | — | Yes |
+| `.editorconfig` and `.markdownlint.json` | Yes | Yes | Yes |
 
-`<root>` is the git toplevel, or `$PWD` if not inside a git repo.
+Codex reads the project `AGENTS.md` directly. Claude Code's `CLAUDE.md` imports that same file.
 
-The HUD is wired up via Claude Code's `statusLine` setting. `statusline.sh` renders the line; `usage-fetch.sh` refreshes the Anthropic usage caps it displays (5h + weekly), reading OAuth credentials from the macOS Keychain or `~/.claude/.credentials.json`. Both are dependency-free bash; the statusline path is baked into `settings.json` at install time so it resolves regardless of cwd. Internals documented inline in each script.
+### User scope
 
-### Instruction templates
+| Client | Files |
+|---|---|
+| Claude Code | `~/.claude/AGENTS.md`, `CLAUDE.md`, `settings.json`, and both HUD scripts under `scripts/` |
+| Codex | `${CODEX_HOME:-$HOME/.codex}/AGENTS.md` |
+| Both | Both sets above, each in its respective directory |
 
-`AGENTS.md` is the canonical agent-instruction file; `CLAUDE.md` is a one-line stub that imports it via `@AGENTS.md`, so Claude Code and Codex load the same content. Both land at the target root (or `~/.claude/` for `--user`) so the relative import resolves.
+Global instructions are separate files because the clients discover different directories. Updates to one global file do not synchronize the other. Project editor/lint files are project-only. Setup does not install skills or configure Codex models, sandbox settings, or a Claude HUD in Codex.
 
-## Operational rules
+The Claude HUD uses `statusLine`. `statusline.sh` renders the line; `usage-fetch.sh` refreshes the Anthropic usage caps it displays (5h + weekly), reading OAuth credentials from the macOS Keychain or `~/.claude/.credentials.json`. Both scripts are dependency-free Bash, with internals documented inline. The installed statusline path is written into `settings.json`.
 
-1. Resolve scope (`--project` default, `--user` if flag passed). Reject unknown args with exit 2.
-2. Resolve target root (`$HOME/.claude` for user, git toplevel or `$PWD` for project).
-3. For each file in the scope-appropriate set: write only if the destination does not exist. Print `wrote: <path>` or `skip: <path> (exists)`.
-4. Report total written / skipped at the end.
+## Running setup
 
-The script implementation lives at `scripts/setup.sh`. Run it directly:
+Resolve the script relative to this skill's directory, including when installed through a skill symlink. Run `scripts/setup.sh` with the selected scope and client. Unknown arguments or invalid/missing `--cli` values exit 2 before writing files.
+
+From a checkout of this repository:
 
 ```bash
-./skills/setup-khemoo/scripts/setup.sh           # project scope
-./skills/setup-khemoo/scripts/setup.sh --user    # user scope
+./skills/setup-khemoo/scripts/setup.sh --cli codex        # Codex project
+./skills/setup-khemoo/scripts/setup.sh --cli both         # shared project
+./skills/setup-khemoo/scripts/setup.sh --user --cli both  # both global directories
 ```
+
+For every destination, write only when no file or symlink exists. Print `wrote: <path>` or `skip: <path> (exists)`, then the total written/skipped. Preserve existing permissions as well as contents; make only newly installed HUD scripts executable.

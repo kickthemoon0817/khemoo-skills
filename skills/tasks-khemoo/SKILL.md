@@ -1,6 +1,6 @@
 ---
 name: tasks-khemoo
-description: Use whenever the user wants to add, remove, list, complete, or clean up tasks / TODOs / follow-ups during a Claude Code session. Triggers on phrases like "add a task", "remind me to", "queue this for later", "remove that task", "clean up completed", "what's on my TODO", "/tasks-khemoo …". Enforces queue-only semantics (adding ≠ implementing) and bonds the in-session task list with the project's `TODO.md` so tasks survive across sessions. Invoke this even when the user phrases the request as "remember to do X later", "we should add a TODO for that", or "track this for later" without naming the skill.
+description: Use whenever the user wants to add, remove, list, complete, or clean up tasks / TODOs / follow-ups during a Claude Code or Codex session. Triggers on phrases like "add a task", "remind me to", "queue this for later", "remove that task", "clean up completed", "what's on my TODO", "/tasks-khemoo …". Enforces queue-only semantics (adding ≠ implementing) and bonds the in-session task list with the project's `TODO.md` so tasks survive across sessions. Invoke this even when the user phrases the request as "remember to do X later", "we should add a TODO for that", or "track this for later" without naming the skill.
 ---
 
 # Task Management with TODO.md Bonding
@@ -11,7 +11,13 @@ description: Use whenever the user wants to add, remove, list, complete, or clea
 
 ## Why bond with TODO.md
 
-The native task tools (`TaskCreate` / `TaskUpdate` / `TaskList`) only persist for the current session. `TODO.md` at the project root persists across sessions and survives in git. Bonding the two means: tasks the user adds now show up next session; tasks the user types into `TODO.md` directly are picked up next time the skill runs.
+An optional native task list only persists for the current session. `TODO.md` at the project root persists across sessions and survives in git. Bonding the two means: tasks the user adds now show up next session; tasks the user types into `TODO.md` directly are picked up next time the skill runs.
+
+## Client adaptation
+
+Use `/tasks-khemoo` in Claude Code and `$tasks-khemoo` in Codex; the subcommands below have the same meaning in both clients.
+
+When Claude Code exposes `TaskCreate`, `TaskUpdate`, and `TaskList`, use them for the in-session operations below. In Codex or another host without equivalent task CRUD tools, use `TODO.md` alone: skip native operations, derive display IDs from the file, and report file changes without inventing tool calls or task IDs. A plan tool is not a persistent task queue; do not replace an active implementation plan to record queued tasks. In file-only mode, `sync` reads and reconciles the file and reports no session import/export.
 
 ## Sub-commands
 
@@ -24,7 +30,7 @@ The native task tools (`TaskCreate` / `TaskUpdate` / `TaskList`) only persist fo
 
 ## Helper script (preferred for file edits)
 
-`scripts/todo-md.sh` performs the bondable-section mutations deterministically. It is idempotent (`done` skips already-done lines, `cleanup` is a no-op when nothing is done, `add` does not deduplicate — the skill's duplicate-check runs first). **Prefer the script over hand-rolled file edits** so the operations match the spec exactly.
+Resolve `scripts/todo-md.sh` relative to this skill directory and run it from the target project root. It performs the bondable-section mutations deterministically. It is idempotent (`done` skips already-done lines, `cleanup` is a no-op when nothing is done, `add` does not deduplicate — the skill's duplicate-check runs first). **Prefer the script over hand-rolled file edits** so the operations match the spec exactly.
 
 ```bash
 ./scripts/todo-md.sh add "Refactor the auth module"
@@ -81,19 +87,19 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 ### `add <description>`
 
 1. **Duplicate check.** Normalize the new description (same rule as `list`); if it matches an existing pending or in-progress task, surface the match and ask `Already queued as #<id>: "<existing>". Add anyway?` Do not add until the user answers. **In non-interactive contexts (autonomous loops, scripted invocations) where no answer is possible, default to "do not add"** — surfacing the duplicate is the report; the user can re-invoke if intentional.
-2. Call `TaskCreate(subject=<short>, description=<full>)` — leaves status `pending`. Capture the returned task id.
+2. If native task tools are available, create a pending in-session task and capture its task ID.
 3. Append `- [ ] <description> (added <today>)` inside the bondable section of `TODO.md` (create the section if missing).
-4. Confirm to the user briefly: `Queued #<id>: <description>.`
+4. Rebuild the display-ID map and confirm briefly: `Queued #<display-id>: <description>.`
 5. **Stop.** Do not start implementation. If the description sounds like a single direct command the user wants done now ("rename foo to bar"), pause before step 1 and ask: "Do you want me to do this now, or just queue it?"
 
 ### `/tasks-khemoo` (default `list`)
 
-1. `TaskList` for the in-session set.
+1. Read the native in-session task list if available; otherwise use an empty in-session set.
 2. Parse the bondable section of `TODO.md` for the persistent set.
 3. **Merge** by normalized description: lowercase + replace each `-`, `_`, `/`, `.` with a single space + collapse runs of whitespace + trim + strip the `(added …)` / `, done …` parentheticals. Tasks whose normalized form matches in both sets are shown once. Tasks only in `TODO.md` are tagged `(TODO.md only)`. Tasks only in-session are tagged `(in-session only)`. If the normalized descriptions match but the raw text differs (cosmetic drift), prefer the `TODO.md` text and note the divergence in the report. For descriptions that almost match but not under this rule (e.g., one has an extra word), do not auto-merge — keep both and flag the near-duplicate so the user can resolve it.
 4. Display grouped by status: `pending` → `in_progress` → `completed`. Number rows sequentially as **display IDs** for use as `<id>` in subsequent `done` / `remove` commands.
 
-**Display IDs vs in-session task IDs.** The numbers shown in `list` are 1-based display IDs that the user types in follow-up commands. Internally, maintain a map `display_id → (in_session_task_id, todo_md_line_or_null)` from the most recent `list` so `done <display_id>` and `remove <display_id>` can call `TaskUpdate(taskId=<in_session_task_id>, ...)` and edit the correct line in `TODO.md`. If the user runs `done`/`remove` without a prior `list` in this conversation, run `list` first to build the map.
+**Display IDs vs in-session task IDs.** The numbers shown in `list` are 1-based display IDs that the user types in follow-up commands. Internally, maintain a map `display_id → (in_session_task_id, todo_md_line_or_null)` from the most recent `list` so `done <display_id>` and `remove <display_id>` update the correct native task (when present) and line in `TODO.md`. In file-only mode the native task ID is null. If the user runs `done`/`remove` without a prior `list` in this conversation, run `list` first to build the map.
 
 **Map invalidation.** After any mutating command (`add`, `done`, `remove`, `cleanup`, `sync`), the display-ID map is stale (status reordering or row deletion shifts the numbering). Re-run `list` to rebuild the map before the next `done`/`remove`.
 
@@ -101,7 +107,7 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 
 0. **Idempotence guard.** If the resolved task already has `status="completed"` OR the matching `TODO.md` line already starts with `- [x]` OR already contains `, done `, do nothing and report `Already done: <description>.` Skip the rest of the steps.
 1. Resolve `<id>` against the most recently displayed merged list.
-2. `TaskUpdate(taskId=<task-id>, status="completed")` for the in-session task.
+2. Mark the corresponding native task completed if one exists.
 3. In `TODO.md`, rewrite the matching line **only if it starts with `- [ ]` and does not already contain `, done `**:
 
    ```
@@ -119,22 +125,22 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 ### `remove <id>`
 
 1. Resolve `<id>` against the merged list.
-2. `TaskUpdate(taskId=<id>, status="deleted")` to remove from the in-session list (`deleted` is a terminal status that drops the task entirely).
+2. Delete the corresponding native task if one exists.
 3. Delete the matching line from the bondable section of `TODO.md`.
 4. Confirm: `Removed: <description>.`
 
 ### `cleanup`
 
-1. `TaskList` to find every completed in-session task.
-2. For each completed task, call `TaskUpdate(taskId=<task-id>, status="deleted")` to drop it.
+1. Read completed native tasks if native task tools are available.
+2. Delete those completed native tasks when present.
 3. Strip every `- [x] ` line from the bondable section of `TODO.md`.
 4. Report: `Cleaned up N completed tasks.`
 
 ### `sync`
 
 1. Parse the bondable section of `TODO.md` (canonical list). **If the same normalized description appears more than once within `TODO.md` (or within the in-session list)**, collapse to a single canonical entry — keep the first occurrence, drop later duplicates from the working set, and surface the dedup in the report under `Cosmetic drift`.
-2. `TaskList` for the in-session set (apply the same intra-set dedup).
-3. For each `TODO.md` task not in-session → `TaskCreate` with that description.
+2. Read the native in-session set if available (apply the same intra-set dedup); otherwise skip steps 3–4.
+3. For each `TODO.md` task not in-session, create a native task with that description and the completion state recorded in the file.
 4. For each in-session task not in `TODO.md` → append to the bondable section.
 5. Report what changed in this exact shape:
 
@@ -149,7 +155,7 @@ Use `date +%Y-%m-%d` (or the system date provided in the conversation context) f
 
 ## When NOT to use
 
-- The user asks Claude to **do** something right now (`fix this bug`, `write this function`). That's a work request, not a task-add. If ambiguous, ask: "Now or later?"
+- The user asks the agent to **do** something right now (`fix this bug`, `write this function`). That's a work request, not a task-add. If ambiguous, ask: "Now or later?"
 - The user is mid-flow on an active task — don't interrupt to log it as a new task.
 - The user explicitly says "don't track this" — respect it.
 
