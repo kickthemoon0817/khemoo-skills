@@ -25,9 +25,9 @@ Conventional Commits, **no parenthesized scope** (`feat:` not `feat(auth):`). On
 
 CI and `./bin/test` find every `skills/*/scripts/test-*.sh` by glob. Add a test by dropping a file with that name + `chmod +x`. No workflow edit needed.
 
-## Skill reference loading (Claude Code)
+## Skill reference loading (Claude Code and Codex)
 
-`vc-khemoo` and `tasks-khemoo` use progressive disclosure. SKILL.md is always loaded; reference files load on demand per the directives in SKILL.md. Don't load defensively — `bump-decision.md` for example should NEVER load for a patch.
+`vc-khemoo` and `tasks-khemoo` use progressive disclosure. Skill metadata is used for discovery; SKILL.md loads when invoked and reference files load on demand per its directives. Don't load defensively — `bump-decision.md` for example should NEVER load for a patch.
 
 ## macOS gotchas
 
