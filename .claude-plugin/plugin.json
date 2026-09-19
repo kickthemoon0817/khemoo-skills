@@ -1,6 +1,6 @@
 {
   "name": "khemoo-skills",
-  "description": "Version control workflow skill: micro-unit commits, PR-based review with multi-role subagents, and semver releases",
+  "description": "Workflow skills for version control, task management, project setup, and an autonomous GitHub issue harness",
   "version": "0.1.73",
   "author": {
     "name": "khemoo",
@@ -14,7 +14,8 @@
     "pull-requests",
     "code-review",
     "releases",
-    "semver"
+    "semver",
+    "issue-harness"
   ],
   "skills": "./skills/"
 }

@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Shellcheck all skills/*/scripts/*.sh (pinned via Docker)
         run: |
@@ -27,7 +29,8 @@ jobs:
         run: |
           set -euo pipefail
           docker run --rm -v "$PWD:/workdir" davidanson/markdownlint-cli2:v0.13.0 \
-            "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**" "!tmp/**"
+            "**/*.md" "!**/vc-khemoo-workspace/**" "!node_modules/**" "!tmp/**" \
+            "!skills/harness-khemoo/upstream/**"
 
       - name: Discover and run all skills/*/scripts/test-*.sh
         run: |

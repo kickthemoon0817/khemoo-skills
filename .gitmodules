@@ -1,0 +1,3 @@
+[submodule "skills/harness-khemoo/upstream"]
+	path = skills/harness-khemoo/upstream
+	url = https://github.com/kickthemoon0817/harness-khemoo.git
