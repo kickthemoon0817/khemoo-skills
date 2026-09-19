@@ -1,31 +1,46 @@
 #!/usr/bin/env bash
-# setup-khemoo setup — scaffolds AI instruction templates + Claude workspace files.
-# Idempotent: never overwrites existing files.
+# setup-khemoo setup — scaffolds Claude Code and Codex instruction files.
+# Idempotent: never overwrites existing files or symlinks.
 #
 # Usage:
-#   ./setup.sh                # --project (default): scaffold inside the current project
-#   ./setup.sh --project      # explicit project scope
-#   ./setup.sh --user         # scaffold inside ~/.claude/ for user-global config
+#   ./setup.sh                     # project scope, Claude Code (compatible default)
+#   ./setup.sh --project --cli both # shared project instructions + Claude HUD
+#   ./setup.sh --user --cli codex   # ${CODEX_HOME:-$HOME/.codex}/AGENTS.md
+#   ./setup.sh --cli claude|codex|both
 # Exit 0 = success. Exit 2 = bad usage.
 
-set -uo pipefail
+set -euo pipefail
 
 # === arguments ===
 SCOPE="project"
-for arg in "$@"; do
-  case "$arg" in
+CLI="claude"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --project) SCOPE="project" ;;
     --user)    SCOPE="user" ;;
+    --cli)
+      if [ "$#" -lt 2 ]; then
+        echo "--cli requires claude, codex, or both." >&2
+        exit 2
+      fi
+      shift
+      CLI="$1"
+      case "$CLI" in
+        claude|codex|both) ;;
+        *) echo "Invalid CLI: $CLI (expected claude, codex, or both)." >&2; exit 2 ;;
+      esac
+      ;;
     -h|--help)
-      sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
-      echo "Unknown argument: $arg" >&2
-      echo "Use --project (default) or --user." >&2
+      echo "Unknown argument: $1" >&2
+      echo "Use --project (default) or --user, with --cli claude|codex|both." >&2
       exit 2
       ;;
   esac
+  shift
 done
 
 # === paths & target scope ===
@@ -33,11 +48,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ASSETS="$(cd "$SCRIPT_DIR/.." && pwd)/assets"
 CLAUDE_ASSETS="$ASSETS/claude"
 
-if [ "$SCOPE" = "user" ]; then
-  TARGET="${HOME}/.claude"
-  mkdir -p "$TARGET"
-else
+if [ "$SCOPE" = "project" ]; then
   TARGET="${ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+  CLAUDE_DIR="$TARGET/.claude"
+else
+  CLAUDE_DIR="${HOME}/.claude"
+  CODEX_DIR="${CODEX_HOME:-${HOME}/.codex}"
 fi
 
 # === helpers ===
@@ -46,56 +62,61 @@ skipped=0
 
 write_once() {
   local src="$1" dst="$2"
-  if [ -e "$dst" ]; then
+  # -e does not include dangling symlinks. Preserve those too.
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
     echo "skip:  $dst (exists)"
     skipped=$((skipped + 1))
     return
   fi
   mkdir -p "$(dirname "$dst")"
   cp "$src" "$dst"
+  if [ "${3:-}" = "executable" ]; then
+    chmod +x "$dst"
+  fi
   echo "wrote: $dst"
   wrote=$((wrote + 1))
 }
 
-echo "Scope: $SCOPE (target: $TARGET)"
+echo "Scope: $SCOPE; CLI: $CLI"
 echo
 
 # === AI instruction templates ===
-# AGENTS.md is the canonical instruction file; CLAUDE.md imports it via
-# @AGENTS.md so Claude Code and Codex load the same content. Both land at the
-# target root so the relative import resolves.
-write_once "$ASSETS/AGENTS.md" "$TARGET/AGENTS.md"
-write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
-
-# === HUD: statusline + usage fetcher + settings ===
-# statusLine is wired to the absolute installed script path so it resolves
-# regardless of the cwd Claude Code runs from.
-if [ "$SCOPE" = "user" ]; then
-  CLAUDE_DIR="$TARGET"
+# Projects share one canonical AGENTS.md across clients. Global instructions
+# must live in each client's own configuration directory to be discovered.
+if [ "$SCOPE" = "project" ]; then
+  write_once "$ASSETS/AGENTS.md" "$TARGET/AGENTS.md"
+  if [ "$CLI" != "codex" ]; then
+    write_once "$ASSETS/CLAUDE.md" "$TARGET/CLAUDE.md"
+  fi
 else
-  CLAUDE_DIR="$TARGET/.claude"
+  if [ "$CLI" != "codex" ]; then
+    write_once "$ASSETS/AGENTS.md" "$CLAUDE_DIR/AGENTS.md"
+    write_once "$ASSETS/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+  fi
+  if [ "$CLI" != "claude" ]; then
+    write_once "$ASSETS/AGENTS.md" "$CODEX_DIR/AGENTS.md"
+  fi
 fi
-STATUSLINE_DST="$CLAUDE_DIR/scripts/statusline.sh"
-USAGE_FETCH_DST="$CLAUDE_DIR/scripts/usage-fetch.sh"
-SETTINGS_DST="$CLAUDE_DIR/settings.json"
 
-write_once "$CLAUDE_ASSETS/statusline.sh" "$STATUSLINE_DST"
-chmod +x "$STATUSLINE_DST" 2>/dev/null || true
+# === Claude HUD: statusline + usage fetcher + settings ===
+if [ "$CLI" != "codex" ]; then
+  STATUSLINE_DST="$CLAUDE_DIR/scripts/statusline.sh"
+  USAGE_FETCH_DST="$CLAUDE_DIR/scripts/usage-fetch.sh"
+  SETTINGS_DST="$CLAUDE_DIR/settings.json"
 
-write_once "$CLAUDE_ASSETS/usage-fetch.sh" "$USAGE_FETCH_DST"
-chmod +x "$USAGE_FETCH_DST" 2>/dev/null || true
+  write_once "$CLAUDE_ASSETS/statusline.sh" "$STATUSLINE_DST" executable
+  write_once "$CLAUDE_ASSETS/usage-fetch.sh" "$USAGE_FETCH_DST" executable
 
-# Settings template carries a @STATUSLINE_PATH@ placeholder; substitute the
-# absolute path before writing so the statusLine command resolves no matter
-# what cwd Claude Code runs from.
-if [ ! -e "$SETTINGS_DST" ]; then
-  mkdir -p "$(dirname "$SETTINGS_DST")"
-  sed "s|@STATUSLINE_PATH@|$STATUSLINE_DST|g" "$CLAUDE_ASSETS/settings.json" > "$SETTINGS_DST"
-  echo "wrote: $SETTINGS_DST"
-  wrote=$((wrote + 1))
-else
-  echo "skip:  $SETTINGS_DST (exists)"
-  skipped=$((skipped + 1))
+  # statusLine uses the installed path so it resolves regardless of cwd.
+  if [ -e "$SETTINGS_DST" ] || [ -L "$SETTINGS_DST" ]; then
+    echo "skip:  $SETTINGS_DST (exists)"
+    skipped=$((skipped + 1))
+  else
+    mkdir -p "$(dirname "$SETTINGS_DST")"
+    sed "s|@STATUSLINE_PATH@|$STATUSLINE_DST|g" "$CLAUDE_ASSETS/settings.json" > "$SETTINGS_DST"
+    echo "wrote: $SETTINGS_DST"
+    wrote=$((wrote + 1))
+  fi
 fi
 
 # === editor & lint config (project scope only) ===
